@@ -17,6 +17,12 @@ module Markymark
     set :server, :puma
     set :bind, '0.0.0.0'
 
+    # Configure Puma with more threads to handle SSE connections
+    set :server_settings, {
+      min_threads: 1,
+      max_threads: 16  # Increased from default 5 to handle SSE + concurrent requests
+    }
+
     # Disable static file caching in development
     configure :development do
       set :static_cache_control, [:no_cache, :no_store, :must_revalidate]
@@ -49,23 +55,9 @@ module Markymark
         # Open browser if requested
         Launchy.open(url) if cli.open_browser
 
-        # Start server with custom shutdown handling
+        # Start server
         set :port, cli.port
-
-        # Use a shutdown hook that Puma will respect
-        server_thread = Thread.new { run! }
-
-        # Set up signal handlers to stop watcher and terminate gracefully
-        ['INT', 'TERM'].each do |signal|
-          trap(signal) do
-            puts "\nShutting down markymark..."
-            @watcher&.stop
-            server_thread.kill
-            exit(0)
-          end
-        end
-
-        server_thread.join
+        run!
       end
 
       def broadcast_file_changed(file_path)
