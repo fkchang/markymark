@@ -21,30 +21,11 @@ module Markymark
     def self.run(args)
       cli = new(args)
 
-      # Set up signal handlers BEFORE launching server
-      # This ensures they're not overridden by Puma
-      setup_signal_handlers
-
-      Server.launch(cli)
+      ServerSimple.launch(cli)
     rescue => e
       warn "Error: #{e.message}"
       warn e.backtrace.join("\n")
       exit 1
-    end
-
-    def self.setup_signal_handlers
-      Signal.trap('INT') do
-        puts "\nShutting down markymark..."
-        # Stop the watcher if it exists
-        Server.watcher&.stop if Server.respond_to?(:watcher)
-        exit 0
-      end
-
-      Signal.trap('TERM') do
-        puts "\nShutting down markymark..."
-        Server.watcher&.stop if Server.respond_to?(:watcher)
-        exit 0
-      end
     end
 
     private
@@ -88,15 +69,17 @@ module Markymark
     end
 
     def validate!
-      @root_path = File.expand_path(@root_path)
+      expanded_path = File.expand_path(@root_path)
 
-      unless File.exist?(@root_path)
+      unless File.exist?(expanded_path)
         raise ArgumentError, "Path does not exist: #{@root_path}"
       end
 
-      unless File.directory?(@root_path)
+      unless File.directory?(expanded_path)
         raise ArgumentError, "Path is not a directory: #{@root_path}"
       end
+
+      @root_path = File.realpath(expanded_path)
 
       unless @port.between?(1, 65535)
         raise ArgumentError, "Port must be between 1 and 65535"
