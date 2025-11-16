@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require "markymark"
+
+Markymark::CLI.run(ARGV)
