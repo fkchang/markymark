@@ -122,8 +122,9 @@ body {
   padding: 1rem;
   flex: 1;
   min-height: 0; /* Allows content to shrink */
-  overflow-y: auto; /* ONLY element that scrolls */
-  overflow-x: hidden;
+  overflow-y: scroll !important; /* Force vertical scrollbar to always show */
+  overflow-x: auto; /* Show horizontal scrollbar if needed */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .tree-folder,
