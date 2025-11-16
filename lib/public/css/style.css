@@ -37,12 +37,21 @@
   padding: 0;
 }
 
+html, body {
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   transition: background-color 0.3s, color 0.3s;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -54,6 +63,7 @@ body {
   align-items: center;
   gap: 1rem;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0; /* Header doesn't shrink */
 }
 
 .logo {
@@ -89,7 +99,8 @@ body {
 /* Main container */
 .container {
   display: flex;
-  height: calc(100vh - 65px);
+  flex: 1; /* Takes remaining space after header */
+  min-height: 0; /* Critical: allows flex children to shrink below content size */
   overflow: hidden;
 }
 
@@ -100,18 +111,18 @@ body {
   max-width: 300px;
   background-color: var(--sidebar-bg);
   border-right: 1px solid var(--border);
-  overflow-y: auto;
-  overflow-x: hidden;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Critical: allows file-tree to respect height constraint */
 }
 
 .file-tree {
   user-select: none;
   padding: 1rem;
   flex: 1;
-  overflow-y: auto;
+  min-height: 0; /* Allows content to shrink */
+  overflow-y: auto; /* ONLY element that scrolls */
   overflow-x: hidden;
 }
 
