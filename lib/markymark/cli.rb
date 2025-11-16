@@ -21,18 +21,30 @@ module Markymark
     def self.run(args)
       cli = new(args)
 
-      # Use at_exit instead of Signal.trap because Puma overrides signal handlers
-      # at_exit is compatible with Puma's graceful shutdown process
-      at_exit do
-        puts "\nShutting down markymark..."
-        Server.watcher&.stop if Server.respond_to?(:watcher)
-      end
+      # Set up signal handlers BEFORE launching server
+      # This ensures they're not overridden by Puma
+      setup_signal_handlers
 
       Server.launch(cli)
     rescue => e
       warn "Error: #{e.message}"
       warn e.backtrace.join("\n")
       exit 1
+    end
+
+    def self.setup_signal_handlers
+      Signal.trap('INT') do
+        puts "\nShutting down markymark..."
+        # Stop the watcher if it exists
+        Server.watcher&.stop if Server.respond_to?(:watcher)
+        exit 0
+      end
+
+      Signal.trap('TERM') do
+        puts "\nShutting down markymark..."
+        Server.watcher&.stop if Server.respond_to?(:watcher)
+        exit 0
+      end
     end
 
     private
