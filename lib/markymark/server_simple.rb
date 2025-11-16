@@ -52,7 +52,12 @@ module Markymark
         return nil unless File.exist?(full_path) && File.file?(full_path)
 
         content = File.read(full_path)
-        Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
+        html = Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
+
+        # Convert mermaid code blocks to divs for mermaid.js rendering
+        html.gsub(/<pre><code class="language-mermaid">(.*?)<\/code><\/pre>/m) do
+          "<div class=\"mermaid\">#{$1}</div>"
+        end
       rescue => e
         "<p>Error rendering markdown: #{e.message}</p>"
       end
@@ -85,6 +90,31 @@ module Markymark
       end
 
       erb :simple
+    end
+
+    # Change directory endpoint
+    post '/change-dir' do
+      new_path = params[:path]&.strip
+
+      unless new_path && !new_path.empty?
+        halt 400, 'Path cannot be empty'
+      end
+
+      expanded_path = File.expand_path(new_path)
+
+      unless File.exist?(expanded_path)
+        halt 400, "Directory does not exist: #{new_path}"
+      end
+
+      unless File.directory?(expanded_path)
+        halt 400, "Path is not a directory: #{new_path}"
+      end
+
+      # Update the root path
+      self.class.root_path = File.realpath(expanded_path)
+      self.class.real_root_path = File.realpath(expanded_path)
+
+      redirect '/'
     end
 
     # Static file serving from document root (for images, etc.)
