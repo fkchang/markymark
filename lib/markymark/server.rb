@@ -17,6 +17,24 @@ module Markymark
     set :server, :puma
     set :bind, '0.0.0.0'
 
+    # Disable static file caching in development to ensure CSS updates are picked up
+    configure :development do
+      set :static_cache_control, [:no_cache, :no_store, :must_revalidate]
+    end
+
+    # Helper methods available in ERB templates
+    helpers do
+      def cache_bust
+        # In development, append current timestamp to force cache reload
+        # In production, use gem version for cache busting
+        if ENV['RACK_ENV'] == 'production'
+          "?v=#{Markymark::VERSION}"
+        else
+          "?v=#{Time.now.to_i}"
+        end
+      end
+    end
+
     class << self
       attr_accessor :root_path, :file_tree, :watcher, :connections
 
