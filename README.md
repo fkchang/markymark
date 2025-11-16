@@ -1,6 +1,11 @@
 # markymark
 
+<p align="center">
+  <img src="assets/marky-mark-dj.jpg" alt="Marky Mark spinning docs" width="600"/>
+</p>
+
 > *Say hi to your docs* 👋
+> **Your personal documentation DJ - spinning markdown into pure visual rhythm**
 
 **markymark** is a local markdown documentation browser with live reload. Think of it as your personal documentation DJ - spinning up your markdown files with smooth GitHub-flavored rendering, Mermaid diagrams, syntax highlighting, and real-time updates. No more alt-tabbing between your editor and browser. Just good vibes and good docs.
 

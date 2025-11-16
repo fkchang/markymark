@@ -29,9 +29,23 @@ module Markymark
         @watcher = Watcher.new(@root_path, self)
         @watcher.start
 
+        # Setup signal handlers for graceful shutdown
+        trap('INT') do
+          puts "\nShutting down markymark..."
+          @watcher&.stop
+          exit 0
+        end
+
+        trap('TERM') do
+          puts "\nShutting down markymark..."
+          @watcher&.stop
+          exit 0
+        end
+
         # Print startup message
         url = "http://localhost:#{cli.port}"
         puts "markymark serving #{@root_path} on #{url}"
+        puts "Press Ctrl+C to stop"
 
         # Open browser if requested
         Launchy.open(url) if cli.open_browser
