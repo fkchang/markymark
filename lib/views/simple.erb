@@ -89,6 +89,14 @@
       background-color: #0860ca;
     }
 
+    .change-dir .browse-btn {
+      background-color: #6e7781;
+    }
+
+    .change-dir .browse-btn:hover {
+      background-color: #57606a;
+    }
+
     .file-list {
       list-style: none;
     }
@@ -259,7 +267,8 @@
     </div>
     <div class="change-dir">
       <form action="/change-dir" method="post">
-        <input type="text" name="path" placeholder="Enter directory path..." value="<%= self.class.root_path %>">
+        <input type="text" name="path" placeholder="Enter directory path..." value="<%= self.class.root_path %>" id="dir-path">
+        <button type="button" class="browse-btn" onclick="window.location.href='/browse-dir'">Browse...</button>
         <button type="submit">Go</button>
       </form>
     </div>

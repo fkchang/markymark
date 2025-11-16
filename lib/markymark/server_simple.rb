@@ -92,6 +92,31 @@ module Markymark
       erb :simple
     end
 
+    # Browse for directory using native dialog
+    get '/browse-dir' do
+      begin
+        require 'tk'
+
+        selected_dir = Tk.chooseDirectory(
+          'initialdir' => self.class.root_path,
+          'title' => 'Select Directory'
+        )
+
+        if selected_dir && !selected_dir.empty?
+          # Update the root path
+          self.class.root_path = File.realpath(selected_dir)
+          self.class.real_root_path = File.realpath(selected_dir)
+        end
+
+        redirect '/'
+      rescue LoadError
+        # Tk not available, fallback to manual entry
+        halt 500, 'Tk library not available. Please install tk or use manual path entry.'
+      rescue => e
+        halt 500, "Error opening directory picker: #{e.message}"
+      end
+    end
+
     # Change directory endpoint
     post '/change-dir' do
       new_path = params[:path]&.strip
