@@ -90,19 +90,24 @@ body {
 .container {
   display: flex;
   height: calc(100vh - 65px);
+  overflow: hidden;
 }
 
 /* Sidebar */
 .sidebar {
   width: 300px;
+  min-width: 300px;
   background-color: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
+  height: 100%;
 }
 
 .file-tree {
   user-select: none;
+  min-height: min-content;
 }
 
 .tree-folder,
