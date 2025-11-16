@@ -17,6 +17,18 @@ module Markymark
     set :server, :puma
     set :bind, '0.0.0.0'
 
+    # Disable static file caching in development
+    configure :development do
+      set :static_cache_control, [:no_cache, :no_store, :must_revalidate]
+    end
+
+    # Helper methods for templates
+    helpers do
+      def cache_bust
+        "?v=#{Time.now.to_i}"
+      end
+    end
+
     class << self
       attr_accessor :root_path, :file_tree, :watcher, :connections
 
@@ -37,9 +49,23 @@ module Markymark
         # Open browser if requested
         Launchy.open(url) if cli.open_browser
 
-        # Start server
+        # Start server with custom shutdown handling
         set :port, cli.port
-        run!
+
+        # Use a shutdown hook that Puma will respect
+        server_thread = Thread.new { run! }
+
+        # Set up signal handlers to stop watcher and terminate gracefully
+        ['INT', 'TERM'].each do |signal|
+          trap(signal) do
+            puts "\nShutting down markymark..."
+            @watcher&.stop
+            server_thread.kill
+            exit(0)
+          end
+        end
+
+        server_thread.join
       end
 
       def broadcast_file_changed(file_path)
@@ -170,11 +196,6 @@ module Markymark
       else
         halt 404, 'File not found'
       end
-    end
-
-    # Graceful shutdown
-    at_exit do
-      self.watcher&.stop
     end
   end
 end
