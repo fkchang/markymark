@@ -163,6 +163,25 @@
       <% end %>
     </div>
 
+    <!-- Quick Shortcuts Section -->
+    <div style="padding: 16px 24px; background-color: #f6f8fa; border-bottom: 1px solid #d0d7de;">
+      <div style="font-size: 12px; font-weight: 600; color: #57606a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Quick Shortcuts</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="/browse-dir?path=<%= CGI.escape(File.expand_path('~')) %>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+          <span>🏠</span>
+          <span>Home</span>
+        </a>
+        <a href="/browse-dir?path=<%= CGI.escape(File.expand_path('~/Downloads')) %>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+          <span>📥</span>
+          <span>Downloads</span>
+        </a>
+        <a href="/browse-dir?path=<%= CGI.escape(File.expand_path('~/work')) %>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+          <span>💼</span>
+          <span>Work</span>
+        </a>
+      </div>
+    </div>
+
     <ul class="directory-list">
       <!-- Parent directory link -->
       <% if @browse_path != '/' %>

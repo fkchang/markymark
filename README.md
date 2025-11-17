@@ -13,6 +13,9 @@
 
 - 📁 **Auto-discovery** - Recursively finds all your markdown files
 - 📂 **Directory switching** - Browse and change your documentation root directory via the UI
+- 🔖 **Bookmarks** - Save frequently-used directories for quick access (stored in `~/.markymark/bookmarks.json`)
+- 🚀 **Quick shortcuts** - Jump to common locations (Home, Downloads, Work) from the browse page
+- 🔗 **Symlink support** - Follows symlinks to documentation in other directories
 - 🎨 **GitHub-Flavored Markdown** - Tables, task lists, syntax highlighting, you name it
 - 📊 **Mermaid diagrams** - Flowcharts, sequence diagrams, and more render beautifully
 - 🌙 **Dark/Light theme toggle** - Switch themes with one click, persisted in localStorage

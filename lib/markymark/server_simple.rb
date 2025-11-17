@@ -5,6 +5,7 @@ require 'json'
 require 'kramdown'
 require 'launchy'
 require 'pathname'
+require 'fileutils'
 
 module Markymark
   # Bulletproof simple Sinatra server for markdown browsing
@@ -66,19 +67,60 @@ module Markymark
         return false unless real_path && @real_root_path
         real_path == @real_root_path || real_path.start_with?(File.join(@real_root_path, ''))
       end
+
+      # Bookmark management methods
+      def bookmarks_file
+        File.expand_path('~/.markymark/bookmarks.json')
+      end
+
+      def load_bookmarks
+        return [] unless File.exist?(bookmarks_file)
+        JSON.parse(File.read(bookmarks_file))
+      rescue JSON::ParserError, Errno::ENOENT
+        []
+      end
+
+      def save_bookmarks(bookmarks)
+        FileUtils.mkdir_p(File.dirname(bookmarks_file))
+        File.write(bookmarks_file, JSON.pretty_generate(bookmarks))
+      end
+
+      def add_bookmark(name, path)
+        bookmarks = load_bookmarks
+        # Avoid duplicates
+        return if bookmarks.any? { |b| b['path'] == path }
+        bookmarks << { 'name' => name, 'path' => path }
+        save_bookmarks(bookmarks)
+      end
+
+      def remove_bookmark(index)
+        bookmarks = load_bookmarks
+        bookmarks.delete_at(index.to_i)
+        save_bookmarks(bookmarks)
+      end
     end
 
     # Main page - shows file list and optional file content
     get '/' do
       @files = self.class.find_markdown_files
+      @bookmarks = self.class.load_bookmarks
       @current_file = params[:file]
 
       if @current_file
-        # Security: ensure path is within root
+        # Security: ensure the requested file path (not symlink target) is within root
+        # This allows symlinks that point outside the root, which is useful for
+        # linking to shared documentation directories
         full_path = File.join(self.class.root_path, @current_file)
-        real_path = File.realpath(full_path) rescue nil
 
-        if real_path.nil? || !self.class.within_root?(real_path)
+        # Check the file exists and prevent directory traversal
+        unless File.exist?(full_path) && (File.file?(full_path) || File.symlink?(full_path))
+          halt 404, 'File not found'
+        end
+
+        # Prevent path traversal attacks by ensuring the normalized path is within root
+        normalized_path = File.expand_path(full_path)
+        unless normalized_path.start_with?(File.expand_path(self.class.root_path) + File::SEPARATOR) ||
+               normalized_path == File.expand_path(self.class.root_path)
           halt 403, 'Access denied'
         end
 
@@ -151,22 +193,56 @@ module Markymark
       redirect '/'
     end
 
-    # Static file serving from document root (for images, etc.)
-    get '/assets/*' do
-      file_path = params[:splat].first
-      full_path = File.join(self.class.root_path, 'assets', file_path)
+    # Add bookmark
+    post '/bookmark' do
+      name = params[:name]&.strip
+      path = params[:path]&.strip
 
-      # Security: ensure path is within root
-      real_path = File.realpath(full_path) rescue nil
-
-      if real_path.nil? || !self.class.within_root?(real_path)
-        halt 403, 'Access denied'
+      unless name && !name.empty? && path && !path.empty?
+        halt 400, 'Name and path are required'
       end
 
-      if File.exist?(full_path) && File.file?(full_path)
-        send_file full_path
+      expanded_path = File.expand_path(path)
+
+      unless File.exist?(expanded_path) && File.directory?(expanded_path)
+        halt 400, 'Invalid directory path'
+      end
+
+      self.class.add_bookmark(name, File.realpath(expanded_path))
+      redirect '/'
+    end
+
+    # Remove bookmark
+    delete '/bookmark/:index' do
+      index = params[:index]
+      self.class.remove_bookmark(index)
+      redirect '/'
+    end
+
+    # Static file serving from application assets or document root (for images, etc.)
+    get '/assets/*' do
+      file_path = params[:splat].first
+
+      # First, check application assets (e.g., markymark icon)
+      app_assets_path = File.join(File.dirname(__FILE__), '..', '..', 'assets', file_path)
+      if File.exist?(app_assets_path) && File.file?(app_assets_path)
+        send_file app_assets_path
       else
-        halt 404, 'File not found'
+        # Then check document root assets (user's images)
+        full_path = File.join(self.class.root_path, 'assets', file_path)
+
+        # Security: ensure path is within root
+        real_path = File.realpath(full_path) rescue nil
+
+        if real_path.nil? || !self.class.within_root?(real_path)
+          halt 403, 'Access denied'
+        end
+
+        if File.exist?(full_path) && File.file?(full_path)
+          send_file full_path
+        else
+          halt 404, 'File not found'
+        end
       end
     end
   end

@@ -57,11 +57,46 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
       display: flex;
+      flex-direction: column;
       height: 100vh;
       overflow: hidden;
       background-color: var(--bg-primary);
       color: var(--text-primary);
       transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background-color: var(--bg-primary);
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .app-branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    .app-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
 
     .sidebar {
@@ -79,9 +114,6 @@
       font-weight: 600;
       font-size: 14px;
       color: var(--text-primary);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .theme-toggle {
@@ -330,10 +362,114 @@
       margin-bottom: 16px;
       color: var(--text-primary);
     }
+
+    /* Bookmarks styling */
+    .bookmarks-section {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .bookmarks-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .bookmarks-list li {
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+    }
+
+    .bookmarks-list li:last-child {
+      border-bottom: none;
+    }
+
+    .bookmark-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      text-align: left;
+      color: var(--text-link);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .shortcut-btn:hover, .bookmark-btn:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .bookmark-btn {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .add-bookmark-btn {
+      background: var(--text-link);
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-bookmark-btn:hover {
+      background-color: var(--text-link-hover);
+    }
+
+    .remove-bookmark-btn {
+      background: var(--text-secondary);
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 4px;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-bookmark-btn:hover {
+      background-color: #d73a49;
+    }
+
+    .empty-bookmarks {
+      padding: 12px 16px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-style: italic;
+      border-bottom: none;
+    }
   </style>
 </head>
 <body>
-  <div class="sidebar">
+  <div class="app-header">
+    <div class="app-branding">
+      <img src="/assets/marky-mark-icon.png" alt="markymark" class="app-icon">
+      <span class="app-name">markymark</span>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+      <span id="theme-icon">🌙</span>
+    </button>
+  </div>
+
+  <div class="main-container">
+    <div class="sidebar">
     <div class="change-dir">
       <form action="/change-dir" method="post">
         <input type="text" name="path" placeholder="Enter directory path..." value="<%= self.class.root_path %>" id="dir-path">
@@ -343,11 +479,36 @@
         </div>
       </form>
     </div>
+
+    <div class="bookmarks-section">
+      <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Bookmarks</span>
+        <button type="button" class="add-bookmark-btn" onclick="addBookmark()" title="Add current directory">+</button>
+      </div>
+      <ul class="bookmarks-list">
+        <% if @bookmarks && @bookmarks.any? %>
+          <% @bookmarks.each_with_index do |bookmark, index| %>
+            <li>
+              <form action="/change-dir" method="post" style="margin: 0; flex: 1;">
+                <input type="hidden" name="path" value="<%= bookmark['path'] %>">
+                <button type="submit" class="bookmark-btn" title="<%= bookmark['path'] %>">
+                  📌 <%= bookmark['name'] %>
+                </button>
+              </form>
+              <form action="/bookmark/<%= index %>" method="post" style="margin: 0;" onsubmit="return confirm('Remove this bookmark?');">
+                <input type="hidden" name="_method" value="delete">
+                <button type="submit" class="remove-bookmark-btn" title="Remove bookmark">×</button>
+              </form>
+            </li>
+          <% end %>
+        <% else %>
+          <li class="empty-bookmarks">No bookmarks yet</li>
+        <% end %>
+      </ul>
+    </div>
+
     <div class="sidebar-header">
       <span>Files</span>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-        <span id="theme-icon">🌙</span>
-      </button>
     </div>
     <ul class="file-list">
       <% @files.each do |file| %>
@@ -371,6 +532,7 @@
         <p>Add .md or .markdown files to the directory to get started.</p>
       </div>
     <% end %>
+  </div>
   </div>
 
   <script>
@@ -411,6 +573,33 @@
         window.location.reload();
       });
     })();
+
+    // Bookmark management
+    function addBookmark() {
+      const currentPath = document.getElementById('dir-path').value;
+      const name = prompt('Enter a name for this bookmark:', currentPath.split('/').pop() || 'Home');
+
+      if (name && name.trim()) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/bookmark';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'name';
+        nameInput.value = name.trim();
+
+        const pathInput = document.createElement('input');
+        pathInput.type = 'hidden';
+        pathInput.name = 'path';
+        pathInput.value = currentPath;
+
+        form.appendChild(nameInput);
+        form.appendChild(pathInput);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
   </script>
 </body>
 </html>
