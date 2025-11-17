@@ -6,9 +6,48 @@
   <title>markymark - <%= @current_file || 'Select a file' %></title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    // Initialize mermaid with theme detection
+    const isDark = localStorage.getItem('theme') === 'dark' ||
+                   (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    mermaid.initialize({ startOnLoad: true, theme: isDark ? 'dark' : 'default' });
   </script>
   <style>
+    :root {
+      /* Light theme colors */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-tertiary: #f6f8fa;
+      --border-color: #d0d7de;
+      --text-primary: #24292f;
+      --text-secondary: #57606a;
+      --text-link: #0969da;
+      --text-link-hover: #0860ca;
+      --bg-active: #ddf4ff;
+      --bg-hover: #eaeef2;
+      --bg-code: #f6f8fa;
+      --border-highlight: #0969da;
+      --mermaid-bg: #ffffff;
+
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    [data-theme="dark"] {
+      /* Dark theme colors - GitHub dark dimmed palette */
+      --bg-primary: #22272e;
+      --bg-secondary: #2d333b;
+      --bg-tertiary: #373e47;
+      --border-color: #444c56;
+      --text-primary: #adbac7;
+      --text-secondary: #768390;
+      --text-link: #539bf5;
+      --text-link-hover: #6cb6ff;
+      --bg-active: #1c2128;
+      --bg-hover: #373e47;
+      --bg-code: #2d333b;
+      --border-highlight: #539bf5;
+      --mermaid-bg: #2d333b;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -20,45 +59,65 @@
       display: flex;
       height: 100vh;
       overflow: hidden;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .sidebar {
       width: 300px;
-      background-color: #f6f8fa;
-      border-right: 1px solid #d0d7de;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
       overflow-y: auto;
       flex-shrink: 0;
     }
 
     .sidebar-header {
       padding: 16px;
-      border-bottom: 1px solid #d0d7de;
-      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-primary);
       font-weight: 600;
       font-size: 14px;
-      color: #24292f;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--bg-hover);
     }
 
     .root-path {
       padding: 12px 16px;
-      background-color: #f6f8fa;
-      border-bottom: 1px solid #d0d7de;
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
       font-size: 12px;
-      color: #57606a;
+      color: var(--text-secondary);
       font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
       overflow-x: auto;
       white-space: nowrap;
     }
 
     .root-path strong {
-      color: #24292f;
+      color: var(--text-primary);
       font-weight: 600;
     }
 
     .change-dir {
       padding: 12px 16px;
-      background-color: #ffffff;
-      border-bottom: 1px solid #d0d7de;
+      background-color: var(--bg-primary);
+      border-bottom: 1px solid var(--border-color);
     }
 
     .change-dir form {
@@ -70,12 +129,14 @@
     .change-dir input[type="text"] {
       width: 100%;
       padding: 6px 8px;
-      border: 1px solid #d0d7de;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       font-size: 12px;
       font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
       overflow-x: auto;
       white-space: nowrap;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
     }
 
     .change-dir-buttons {
@@ -86,7 +147,7 @@
     .change-dir button {
       flex: 1;
       padding: 6px 12px;
-      background-color: #0969da;
+      background-color: var(--text-link);
       color: #ffffff;
       border: none;
       border-radius: 6px;
@@ -96,15 +157,16 @@
     }
 
     .change-dir button:hover {
-      background-color: #0860ca;
+      background-color: var(--text-link-hover);
     }
 
     .change-dir .browse-btn {
-      background-color: #6e7781;
+      background-color: var(--text-secondary);
     }
 
     .change-dir .browse-btn:hover {
-      background-color: #57606a;
+      background-color: var(--text-secondary);
+      opacity: 0.8;
     }
 
     .file-list {
@@ -112,34 +174,34 @@
     }
 
     .file-list li {
-      border-bottom: 1px solid #d0d7de;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .file-list a {
       display: block;
       padding: 12px 16px;
       text-decoration: none;
-      color: #0969da;
+      color: var(--text-link);
       font-size: 14px;
       transition: background-color 0.2s;
       word-break: break-word;
     }
 
     .file-list a:hover {
-      background-color: #eaeef2;
+      background-color: var(--bg-hover);
     }
 
     .file-list a.active {
-      background-color: #ddf4ff;
+      background-color: var(--bg-active);
       font-weight: 600;
-      border-left: 3px solid #0969da;
+      border-left: 3px solid var(--border-highlight);
     }
 
     .content {
       flex: 1;
       overflow-y: auto;
       padding: 32px;
-      background-color: #ffffff;
+      background-color: var(--bg-primary);
     }
 
     .markdown-body {
@@ -158,13 +220,13 @@
 
     .markdown-body h1 {
       font-size: 2em;
-      border-bottom: 1px solid #d0d7de;
+      border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.3em;
     }
 
     .markdown-body h2 {
       font-size: 1.5em;
-      border-bottom: 1px solid #d0d7de;
+      border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.3em;
     }
 
@@ -187,7 +249,7 @@
     }
 
     .markdown-body code {
-      background-color: #f6f8fa;
+      background-color: var(--bg-code);
       padding: 0.2em 0.4em;
       border-radius: 6px;
       font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -195,7 +257,7 @@
     }
 
     .markdown-body pre {
-      background-color: #f6f8fa;
+      background-color: var(--bg-code);
       padding: 16px;
       border-radius: 6px;
       overflow: auto;
@@ -209,8 +271,8 @@
 
     .markdown-body blockquote {
       padding: 0 1em;
-      color: #57606a;
-      border-left: 0.25em solid #d0d7de;
+      color: var(--text-secondary);
+      border-left: 0.25em solid var(--border-color);
       margin-bottom: 16px;
     }
 
@@ -223,20 +285,20 @@
     .markdown-body table th,
     .markdown-body table td {
       padding: 6px 13px;
-      border: 1px solid #d0d7de;
+      border: 1px solid var(--border-color);
     }
 
     .markdown-body table th {
       font-weight: 600;
-      background-color: #f6f8fa;
+      background-color: var(--bg-code);
     }
 
     .markdown-body table tr:nth-child(2n) {
-      background-color: #f6f8fa;
+      background-color: var(--bg-code);
     }
 
     .markdown-body a {
-      color: #0969da;
+      color: var(--text-link);
       text-decoration: none;
     }
 
@@ -251,8 +313,8 @@
 
     /* Mermaid diagram styling */
     .markdown-body .mermaid {
-      background-color: #ffffff;
-      border: 1px solid #d0d7de;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 16px;
       margin-bottom: 16px;
@@ -261,12 +323,12 @@
     .empty-state {
       text-align: center;
       padding: 64px 32px;
-      color: #57606a;
+      color: var(--text-secondary);
     }
 
     .empty-state h2 {
       margin-bottom: 16px;
-      color: #24292f;
+      color: var(--text-primary);
     }
   </style>
 </head>
@@ -285,7 +347,10 @@
       </form>
     </div>
     <div class="sidebar-header">
-      Files
+      <span>Files</span>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <span id="theme-icon">🌙</span>
+      </button>
     </div>
     <ul class="file-list">
       <% @files.each do |file| %>
@@ -310,5 +375,57 @@
       </div>
     <% end %>
   </div>
+
+  <script>
+    // Theme toggle functionality
+    (function() {
+      const html = document.documentElement;
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = document.getElementById('theme-icon');
+
+      // Get initial theme from localStorage or system preference
+      function getInitialTheme() {
+        const stored = localStorage.getItem('theme');
+        if (stored) return stored;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      // Apply theme
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          html.setAttribute('data-theme', 'dark');
+          themeIcon.textContent = '☀️';
+        } else {
+          html.removeAttribute('data-theme');
+          themeIcon.textContent = '🌙';
+        }
+      }
+
+      // Initialize theme
+      const currentTheme = getInitialTheme();
+      applyTheme(currentTheme);
+
+      // Toggle theme on button click
+      themeToggle.addEventListener('click', function() {
+        const newTheme = html.hasAttribute('data-theme') ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+
+        // Reinitialize mermaid with new theme
+        if (typeof mermaid !== 'undefined') {
+          mermaid.initialize({
+            startOnLoad: true,
+            theme: newTheme === 'dark' ? 'dark' : 'default'
+          });
+          // Re-render mermaid diagrams
+          document.querySelectorAll('.mermaid').forEach((element, index) => {
+            const content = element.textContent;
+            element.innerHTML = content;
+          });
+          mermaid.run();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
