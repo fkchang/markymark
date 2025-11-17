@@ -154,7 +154,7 @@ module Markymark
     # Static file serving from document root (for images, etc.)
     get '/assets/*' do
       file_path = params[:splat].first
-      full_path = File.join(self.class.root_path, file_path)
+      full_path = File.join(self.class.root_path, 'assets', file_path)
 
       # Security: ensure path is within root
       real_path = File.realpath(full_path) rescue nil
