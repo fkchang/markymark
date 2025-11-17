@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Directory - markymark</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+      background-color: #f6f8fa;
+      padding: 32px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px 24px;
+      background-color: #f6f8fa;
+      border-bottom: 1px solid #d0d7de;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #24292f;
+      margin-bottom: 8px;
+    }
+
+    .current-path {
+      padding: 12px;
+      background-color: #f6f8fa;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 13px;
+      color: #24292f;
+      word-break: break-all;
+    }
+
+    .error {
+      padding: 12px;
+      background-color: #fff8c5;
+      border: 1px solid #d4a72c;
+      border-radius: 6px;
+      color: #7d6608;
+      margin-top: 12px;
+    }
+
+    .directory-list {
+      list-style: none;
+    }
+
+    .directory-item {
+      border-bottom: 1px solid #d0d7de;
+    }
+
+    .directory-item:last-child {
+      border-bottom: none;
+    }
+
+    .directory-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 24px;
+      text-decoration: none;
+      color: #0969da;
+      transition: background-color 0.2s;
+    }
+
+    .directory-link:hover {
+      background-color: #f6f8fa;
+    }
+
+    .directory-link.parent {
+      color: #57606a;
+      font-weight: 600;
+    }
+
+    .directory-icon {
+      margin-right: 12px;
+      font-size: 16px;
+    }
+
+    .directory-name {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .actions {
+      padding: 16px 24px;
+      background-color: #f6f8fa;
+      border-top: 1px solid #d0d7de;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #0969da;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #0860ca;
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: #24292f;
+      border: 1px solid #d0d7de;
+    }
+
+    .btn-secondary:hover {
+      background-color: #f6f8fa;
+    }
+
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: #57606a;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Browse Directory</h1>
+      <div class="current-path">
+        <%= @browse_path %>
+      </div>
+      <% if @error %>
+        <div class="error">
+          <%= @error %>
+        </div>
+      <% end %>
+    </div>
+
+    <ul class="directory-list">
+      <!-- Parent directory link -->
+      <% if @browse_path != '/' %>
+        <li class="directory-item">
+          <a href="/browse-dir?path=<%= CGI.escape(@parent_dir) %>" class="directory-link parent">
+            <span class="directory-icon">↑</span>
+            <span class="directory-name">..</span>
+          </a>
+        </li>
+      <% end %>
+
+      <!-- Subdirectories -->
+      <% if @directories.empty? %>
+        <li class="directory-item">
+          <div class="empty-state">
+            <div class="empty-state-icon">📂</div>
+            <p>No subdirectories found</p>
+          </div>
+        </li>
+      <% else %>
+        <% @directories.each do |dir| %>
+          <li class="directory-item">
+            <a href="/browse-dir?path=<%= CGI.escape(File.join(@browse_path, dir)) %>" class="directory-link">
+              <span class="directory-icon">📁</span>
+              <span class="directory-name"><%= dir %></span>
+            </a>
+          </li>
+        <% end %>
+      <% end %>
+    </ul>
+
+    <div class="actions">
+      <a href="/" class="btn btn-secondary">Cancel</a>
+      <form action="/change-dir" method="post" style="display: inline;">
+        <input type="hidden" name="path" value="<%= @browse_path %>">
+        <button type="submit" class="btn btn-primary">Use This Directory</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

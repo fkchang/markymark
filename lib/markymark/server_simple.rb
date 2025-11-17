@@ -92,29 +92,38 @@ module Markymark
       erb :simple
     end
 
-    # Browse for directory using native dialog
+    # Browse directories via web UI
     get '/browse-dir' do
+      @browse_path = params[:path] || self.class.root_path
+
+      # Expand and validate the path
       begin
-        require 'tk'
+        @browse_path = File.expand_path(@browse_path)
 
-        selected_dir = Tk.chooseDirectory(
-          'initialdir' => self.class.root_path,
-          'title' => 'Select Directory'
-        )
-
-        if selected_dir && !selected_dir.empty?
-          # Update the root path
-          self.class.root_path = File.realpath(selected_dir)
-          self.class.real_root_path = File.realpath(selected_dir)
+        unless File.exist?(@browse_path)
+          @browse_path = self.class.root_path
         end
 
-        redirect '/'
-      rescue LoadError
-        # Tk not available, fallback to manual entry
-        halt 500, 'Tk library not available. Please install tk or use manual path entry.'
+        unless File.directory?(@browse_path)
+          @browse_path = File.dirname(@browse_path)
+        end
+
+        # Get parent directory
+        @parent_dir = File.dirname(@browse_path)
+
+        # Get subdirectories
+        @directories = Dir.entries(@browse_path)
+          .select { |entry| entry != '.' && entry != '..' }
+          .select { |entry| File.directory?(File.join(@browse_path, entry)) }
+          .sort
       rescue => e
-        halt 500, "Error opening directory picker: #{e.message}"
+        @browse_path = self.class.root_path
+        @parent_dir = File.dirname(@browse_path)
+        @directories = []
+        @error = "Error browsing directory: #{e.message}"
       end
+
+      erb :browse
     end
 
     # Change directory endpoint
