@@ -334,9 +334,6 @@
 </head>
 <body>
   <div class="sidebar">
-    <div class="root-path">
-      <strong>Root:</strong> <%= self.class.root_path %>
-    </div>
     <div class="change-dir">
       <form action="/change-dir" method="post">
         <input type="text" name="path" placeholder="Enter directory path..." value="<%= self.class.root_path %>" id="dir-path">
@@ -409,21 +406,9 @@
       themeToggle.addEventListener('click', function() {
         const newTheme = html.hasAttribute('data-theme') ? 'light' : 'dark';
         localStorage.setItem('theme', newTheme);
-        applyTheme(newTheme);
 
-        // Reinitialize mermaid with new theme
-        if (typeof mermaid !== 'undefined') {
-          mermaid.initialize({
-            startOnLoad: true,
-            theme: newTheme === 'dark' ? 'dark' : 'default'
-          });
-          // Re-render mermaid diagrams
-          document.querySelectorAll('.mermaid').forEach((element, index) => {
-            const content = element.textContent;
-            element.innerHTML = content;
-          });
-          mermaid.run();
-        }
+        // Reload page to re-render mermaid diagrams with new theme
+        window.location.reload();
       });
     })();
   </script>
