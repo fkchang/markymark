@@ -474,7 +474,7 @@
       <form action="/change-dir" method="post">
         <input type="text" name="path" placeholder="Enter directory path..." value="<%= self.class.root_path %>" id="dir-path">
         <div class="change-dir-buttons">
-          <button type="button" class="browse-btn" onclick="window.location.href='/browse-dir'">Browse...</button>
+          <button type="button" class="browse-btn" onclick="window.location.href='/browse-dir?dir=<%= CGI.escape(@current_dir) %>'">Browse...</button>
           <button type="submit">Go</button>
         </div>
       </form>
@@ -513,7 +513,7 @@
     <ul class="file-list">
       <% @files.each do |file| %>
         <li>
-          <a href="/?file=<%= CGI.escape(file) %>" class="<%= file == @current_file ? 'active' : '' %>">
+          <a href="/?file=<%= CGI.escape(file) %>&dir=<%= CGI.escape(@current_dir) %>" class="<%= file == @current_file ? 'active' : '' %>">
             <%= file %>
           </a>
         </li>

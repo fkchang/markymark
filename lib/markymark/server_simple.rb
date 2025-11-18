@@ -6,6 +6,7 @@ require 'kramdown'
 require 'launchy'
 require 'pathname'
 require 'fileutils'
+require 'cgi'
 
 module Markymark
   # Bulletproof simple Sinatra server for markdown browsing
@@ -36,20 +37,28 @@ module Markymark
         # Open browser if requested
         Launchy.open(url) if cli.open_browser
 
+        # Write PID file for server detection
+        write_pid_file(cli.port)
+
+        # Clean up PID file on exit
+        at_exit do
+          delete_pid_file
+        end
+
         # Start server
         set :port, cli.port
         run!
       end
 
-      def find_markdown_files
-        pattern = File.join(@root_path, '**', '*.{md,markdown}')
+      def find_markdown_files(root_path = @root_path)
+        pattern = File.join(root_path, '**', '*.{md,markdown}')
         Dir.glob(pattern, File::FNM_CASEFOLD).map do |full_path|
-          Pathname.new(full_path).relative_path_from(Pathname.new(@root_path)).to_s
+          Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
         end.sort
       end
 
-      def render_markdown(file_path)
-        full_path = File.join(@root_path, file_path)
+      def render_markdown(file_path, root_path = @root_path)
+        full_path = File.join(root_path, file_path)
         return nil unless File.exist?(full_path) && File.file?(full_path)
 
         content = File.read(full_path)
@@ -63,9 +72,9 @@ module Markymark
         "<p>Error rendering markdown: #{e.message}</p>"
       end
 
-      def within_root?(real_path)
-        return false unless real_path && @real_root_path
-        real_path == @real_root_path || real_path.start_with?(File.join(@real_root_path, ''))
+      def within_root?(real_path, real_root_path = @real_root_path)
+        return false unless real_path && real_root_path
+        real_path == real_root_path || real_path.start_with?(File.join(real_root_path, ''))
       end
 
       # Bookmark management methods
@@ -98,11 +107,46 @@ module Markymark
         bookmarks.delete_at(index.to_i)
         save_bookmarks(bookmarks)
       end
+
+      # PID file management for server detection
+      def pid_file_path
+        File.expand_path('~/.markymark/server.pid')
+      end
+
+      def write_pid_file(port)
+        FileUtils.mkdir_p(File.dirname(pid_file_path))
+        File.write(pid_file_path, "port=#{port}\npid=#{Process.pid}\n")
+      end
+
+      def delete_pid_file
+        File.delete(pid_file_path) if File.exist?(pid_file_path)
+      end
+    end
+
+    # Helper methods for per-tab directory isolation via URL parameters
+    helpers do
+      def get_directory_from_params
+        # Get directory from URL parameter, fall back to server default
+        dir_param = params[:dir]
+
+        if dir_param && !dir_param.empty?
+          expanded = File.expand_path(dir_param)
+          # Validate it exists and is a directory
+          if File.exist?(expanded) && File.directory?(expanded)
+            return File.realpath(expanded)
+          end
+        end
+
+        # Fall back to server default
+        self.class.root_path
+      end
     end
 
     # Main page - shows file list and optional file content
     get '/' do
-      @files = self.class.find_markdown_files
+      current_dir = get_directory_from_params
+      @current_dir = current_dir  # Make available to template for preserving in links
+      @files = self.class.find_markdown_files(current_dir)
       @bookmarks = self.class.load_bookmarks
       @current_file = params[:file]
 
@@ -110,7 +154,7 @@ module Markymark
         # Security: ensure the requested file path (not symlink target) is within root
         # This allows symlinks that point outside the root, which is useful for
         # linking to shared documentation directories
-        full_path = File.join(self.class.root_path, @current_file)
+        full_path = File.join(current_dir, @current_file)
 
         # Check the file exists and prevent directory traversal
         unless File.exist?(full_path) && (File.file?(full_path) || File.symlink?(full_path))
@@ -119,31 +163,44 @@ module Markymark
 
         # Prevent path traversal attacks by ensuring the normalized path is within root
         normalized_path = File.expand_path(full_path)
-        unless normalized_path.start_with?(File.expand_path(self.class.root_path) + File::SEPARATOR) ||
-               normalized_path == File.expand_path(self.class.root_path)
+        unless normalized_path.start_with?(File.expand_path(current_dir) + File::SEPARATOR) ||
+               normalized_path == File.expand_path(current_dir)
           halt 403, 'Access denied'
         end
 
-        @html_content = self.class.render_markdown(@current_file)
+        @html_content = self.class.render_markdown(@current_file, current_dir)
       else
         # Default to first file if available
         @current_file = @files.first
-        @html_content = @current_file ? self.class.render_markdown(@current_file) : nil
+        @html_content = @current_file ? self.class.render_markdown(@current_file, current_dir) : nil
       end
 
       erb :simple
     end
 
+    # Server identification for CLI detection
+    get '/api/status' do
+      content_type :json
+      {
+        app: 'markymark',
+        version: Markymark::VERSION,
+        port: settings.port,
+        root_path: get_directory_from_params
+      }.to_json
+    end
+
     # Browse directories via web UI
     get '/browse-dir' do
-      @browse_path = params[:path] || self.class.root_path
+      current_dir = get_directory_from_params
+      @browse_path = params[:path] || current_dir
+      @current_dir = current_dir  # Pass to template for preserving in form actions
 
       # Expand and validate the path
       begin
         @browse_path = File.expand_path(@browse_path)
 
         unless File.exist?(@browse_path)
-          @browse_path = self.class.root_path
+          @browse_path = current_dir
         end
 
         unless File.directory?(@browse_path)
@@ -159,7 +216,7 @@ module Markymark
           .select { |entry| File.directory?(File.join(@browse_path, entry)) }
           .sort
       rescue => e
-        @browse_path = self.class.root_path
+        @browse_path = current_dir
         @parent_dir = File.dirname(@browse_path)
         @directories = []
         @error = "Error browsing directory: #{e.message}"
@@ -168,29 +225,42 @@ module Markymark
       erb :browse
     end
 
+    # Helper method for dual-format error responses
+    def json_or_text_error(message, status)
+      if request.accept?('application/json') || request.env['HTTP_ACCEPT']&.include?('application/json')
+        content_type :json
+        halt status, { error: message }.to_json
+      else
+        halt status, message
+      end
+    end
+
     # Change directory endpoint
     post '/change-dir' do
       new_path = params[:path]&.strip
 
       unless new_path && !new_path.empty?
-        halt 400, 'Path cannot be empty'
+        json_or_text_error('Path cannot be empty', 400)
       end
 
       expanded_path = File.expand_path(new_path)
 
       unless File.exist?(expanded_path)
-        halt 400, "Directory does not exist: #{new_path}"
+        json_or_text_error("Directory does not exist: #{new_path}", 400)
       end
 
       unless File.directory?(expanded_path)
-        halt 400, "Path is not a directory: #{new_path}"
+        json_or_text_error("Path is not a directory: #{new_path}", 400)
       end
 
-      # Update the root path
-      self.class.root_path = File.realpath(expanded_path)
-      self.class.real_root_path = File.realpath(expanded_path)
+      real_path = File.realpath(expanded_path)
 
-      redirect '/'
+      # Update server default for CLI directory switching
+      self.class.root_path = real_path
+      self.class.real_root_path = real_path
+
+      # Redirect to root with dir parameter for tab isolation
+      redirect "/?dir=#{CGI.escape(real_path)}"
     end
 
     # Add bookmark
@@ -229,12 +299,14 @@ module Markymark
         send_file app_assets_path
       else
         # Then check document root assets (user's images)
-        full_path = File.join(self.class.root_path, 'assets', file_path)
+        current_dir = get_directory_from_params
+        full_path = File.join(current_dir, 'assets', file_path)
 
         # Security: ensure path is within root
         real_path = File.realpath(full_path) rescue nil
+        real_current_dir = File.realpath(current_dir)
 
-        if real_path.nil? || !self.class.within_root?(real_path)
+        if real_path.nil? || !self.class.within_root?(real_path, real_current_dir)
           halt 403, 'Access denied'
         end
 

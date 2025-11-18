@@ -11,6 +11,7 @@
 
 ## Features
 
+- 🔄 **Smart directory switching** - Run `markymark` from any directory to switch existing server or start new one
 - 📁 **Auto-discovery** - Recursively finds all your markdown files
 - 📂 **Directory switching** - Browse and change your documentation root directory via the UI
 - 🔖 **Bookmarks** - Save frequently-used directories for quick access (stored in `~/.markymark/bookmarks.json`)
@@ -21,6 +22,7 @@
 - 🌙 **Dark/Light theme toggle** - Switch themes with one click, persisted in localStorage
 - 🔖 **Bookmarkable URLs** - Share links to specific docs
 - 🖼️ **Image support** - Place images in an `assets/` folder for rendering
+- 🌐 **Pumadev integration** - Optional .test domain support for easier access
 
 ## Installation
 
@@ -53,10 +55,45 @@ The browser opens automatically and you're good to go. Press `Ctrl+C` to stop th
 3. **Displays** files in a clean, GitHub-style interface
 4. **Switches** themes instantly with persistent localStorage
 
+## Smart Directory Switching
+
+markymark features intelligent server management:
+
+- **Smart detection**: Running `markymark` from any directory automatically detects existing servers
+- **Automatic switching**: If a server is running, it switches to your new directory without starting a new process
+- **Port conflict handling**: If the default port is busy, markymark prompts you to start on an alternative port
+- **Persistent tracking**: Server information stored in `~/.markymark/server.pid` for reliable detection
+
+### Examples
+
+```bash
+# Start server in first directory
+cd ~/docs/project-a
+markymark
+
+# From another directory, switch the same server
+cd ~/docs/project-b
+markymark  # Automatically switches existing server to project-b
+```
+
+## Pumadev Integration
+
+For those who prefer .test domains over remembering ports:
+
+```bash
+# View setup instructions
+markymark --pumadev
+
+# After setup, access via
+http://markymark.test
+```
+
+**Note for Ruby Version Manager Users**: Install markymark in your global gemset of your default Ruby to ensure the command is available across all Ruby versions.
+
 ## Smart Defaults
 
 - Automatically shows the first markdown file found
-- Defaults to port 4567 (Sinatra's favorite)
+- Defaults to port 4545 (memorable and fewer conflicts)
 - Theme preference persists across sessions
 - Respects your directory structure
 

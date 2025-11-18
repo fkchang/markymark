@@ -214,7 +214,7 @@
     </ul>
 
     <div class="actions">
-      <a href="/" class="btn btn-secondary">Cancel</a>
+      <a href="/?dir=<%= CGI.escape(@current_dir) %>" class="btn btn-secondary">Cancel</a>
       <form action="/change-dir" method="post" style="display: inline;">
         <input type="hidden" name="path" value="<%= @browse_path %>">
         <button type="submit" class="btn btn-primary">Use This Directory</button>
