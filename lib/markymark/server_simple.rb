@@ -86,11 +86,60 @@ module Markymark
         html = Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
 
         # Convert mermaid code blocks to divs for mermaid.js rendering
-        html.gsub(/<pre><code class="language-mermaid">(.*?)<\/code><\/pre>/m) do
+        html = html.gsub(/<pre><code class="language-mermaid">(.*?)<\/code><\/pre>/m) do
           "<div class=\"mermaid\">#{$1}</div>"
         end
+
+        # Rewrite relative markdown links to use query parameters
+        html = rewrite_markdown_links(html, file_path, root_path)
+
+        html
       rescue => e
         "<p>Error rendering markdown: #{e.message}</p>"
+      end
+
+      def rewrite_markdown_links(html, current_file, root_path)
+        # Get the directory of the current file for resolving relative paths
+        current_dir = File.dirname(current_file)
+        current_dir = "." if current_dir == "."
+
+        # Rewrite relative links to .md or .markdown files
+        html.gsub(/<a\s+href=["']([^"']+)["']([^>]*)>/i) do
+          full_match = $&
+          href = $1
+          rest_of_tag = $2
+
+          # Skip if it's an absolute URL (http://, https://, //, ftp://, mailto:, etc.)
+          if href =~ %r{^([a-z][a-z0-9+.-]*:|//)}i
+            next full_match
+          end
+
+          # Skip if it's an anchor link
+          if href.start_with?('#')
+            next full_match
+          end
+
+          # Only rewrite links to markdown files
+          if href =~ /\.(md|markdown)$/i
+            # Resolve the relative path from the current file's directory
+            if current_dir == "."
+              target_file = href
+            else
+              target_file = File.join(current_dir, href)
+            end
+
+            # Normalize the path (remove ./ and resolve ../)
+            target_file = Pathname.new(target_file).cleanpath.to_s
+
+            # Rewrite to use query parameters
+            encoded_file = CGI.escape(target_file)
+            encoded_dir = CGI.escape(root_path)
+            %Q{<a href="/?file=#{encoded_file}&dir=#{encoded_dir}"#{rest_of_tag}>}
+          else
+            # Not a markdown file, leave as-is
+            full_match
+          end
+        end
       end
 
       def within_root?(real_path, real_root_path = @real_root_path)

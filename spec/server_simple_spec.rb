@@ -372,4 +372,101 @@ RSpec.describe Markymark::ServerSimple do
       end
     end
   end
+
+  describe '.rewrite_markdown_links' do
+    let(:root_path) { '/test/root' }
+
+    it 'rewrites simple relative markdown links' do
+      html = '<a href="guide.md">Guide</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/?file=guide.md&dir=%2Ftest%2Froot"')
+      expect(result).to include('>Guide</a>')
+    end
+
+    it 'rewrites nested relative markdown links' do
+      html = '<a href="docs/api.md">API</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/?file=docs%2Fapi.md&dir=%2Ftest%2Froot"')
+    end
+
+    it 'resolves links relative to current file directory' do
+      html = '<a href="advanced.md">Advanced</a>'
+      result = described_class.rewrite_markdown_links(html, 'docs/getting-started.md', root_path)
+
+      expect(result).to include('href="/?file=docs%2Fadvanced.md&dir=%2Ftest%2Froot"')
+    end
+
+    it 'handles parent directory references' do
+      html = '<a href="../README.md">Home</a>'
+      result = described_class.rewrite_markdown_links(html, 'docs/guide.md', root_path)
+
+      expect(result).to include('href="/?file=README.md&dir=%2Ftest%2Froot"')
+    end
+
+    it 'preserves absolute URLs unchanged' do
+      html = '<a href="https://example.com/doc.md">External</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to eq(html)
+    end
+
+    it 'preserves protocol-relative URLs unchanged' do
+      html = '<a href="//example.com/doc.md">External</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to eq(html)
+    end
+
+    it 'preserves anchor links unchanged' do
+      html = '<a href="#section">Section</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to eq(html)
+    end
+
+    it 'preserves non-markdown file links unchanged' do
+      html = '<a href="image.png">Image</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to eq(html)
+    end
+
+    it 'preserves link attributes' do
+      html = '<a href="guide.md" class="link" target="_blank">Guide</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('class="link" target="_blank"')
+    end
+
+    it 'handles .markdown extension' do
+      html = '<a href="docs/guide.markdown">Guide</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/?file=docs%2Fguide.markdown&dir=%2Ftest%2Froot"')
+    end
+
+    it 'handles case-insensitive markdown extensions' do
+      html = '<a href="guide.MD">Guide</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/?file=guide.MD&dir=%2Ftest%2Froot"')
+    end
+
+    it 'handles multiple links in same HTML' do
+      html = '<a href="guide.md">Guide</a> and <a href="api.md">API</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/?file=guide.md&dir=%2Ftest%2Froot"')
+      expect(result).to include('href="/?file=api.md&dir=%2Ftest%2Froot"')
+    end
+
+    it 'preserves mailto links unchanged' do
+      html = '<a href="mailto:test@example.com">Email</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to eq(html)
+    end
+  end
 end
