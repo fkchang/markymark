@@ -229,6 +229,111 @@
       border-left: 3px solid var(--border-highlight);
     }
 
+    /* Accordion controls */
+    .accordion-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .accordion-control-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: background-color 0.2s;
+    }
+
+    .accordion-control-btn:hover {
+      background-color: var(--bg-hover);
+    }
+
+    /* Directory accordion */
+    .file-tree {
+      margin-top: 12px;
+    }
+
+    .directory-section {
+      margin-bottom: 4px;
+    }
+
+    .directory-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      user-select: none;
+    }
+
+    .directory-header:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .directory-arrow {
+      display: inline-block;
+      width: 16px;
+      font-size: 12px;
+      transition: transform 0.2s;
+      color: var(--text-secondary);
+    }
+
+    .directory-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-left: 4px;
+    }
+
+    .file-count {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-left: 8px;
+    }
+
+    .directory-files {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-left: 2px solid var(--border-color);
+      margin-left: 12px;
+    }
+
+    .directory-files li {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .directory-files li:last-child {
+      border-bottom: none;
+    }
+
+    .directory-files a {
+      display: block;
+      padding: 8px 12px;
+      text-decoration: none;
+      color: var(--text-link);
+      font-size: 13px;
+      transition: background-color 0.2s;
+      word-break: break-word;
+    }
+
+    .directory-files a:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .directory-files a.active {
+      background-color: var(--bg-active);
+      font-weight: 600;
+      border-left: 3px solid var(--border-highlight);
+    }
+
     .content {
       flex: 1;
       overflow-y: auto;
@@ -509,16 +614,34 @@
 
     <div class="sidebar-header">
       <span>Files</span>
+      <div class="accordion-controls">
+        <button type="button" class="accordion-control-btn" onclick="expandAllDirectories()">Expand All</button>
+        <button type="button" class="accordion-control-btn" onclick="collapseAllDirectories()">Collapse All</button>
+      </div>
     </div>
-    <ul class="file-list">
-      <% @files.each do |file| %>
-        <li>
-          <a href="/?file=<%= CGI.escape(file) %>&dir=<%= CGI.escape(@current_dir) %>" class="<%= file == @current_file ? 'active' : '' %>">
-            <%= file %>
-          </a>
-        </li>
+    <div class="file-tree">
+      <% @files_grouped.each do |dir, files| %>
+        <% dir_id = "dir-" + dir.gsub(/[^a-zA-Z0-9]/, '-') %>
+        <% is_expanded = dir == "." %>
+        <div class="directory-section">
+          <div class="directory-header" data-dir="<%= dir %>" onclick="toggleDirectory(this)">
+            <span class="directory-arrow"><%= is_expanded ? '▼' : '►' %></span>
+            <span class="directory-name"><%= dir == "." ? "📄 Root" : "📁 #{dir}" %></span>
+            <span class="file-count">(<%= files.length %>)</span>
+          </div>
+          <ul class="directory-files" style="<%= is_expanded ? '' : 'display: none;' %>">
+            <% files.each do |file| %>
+              <% full_path = dir == "." ? file : File.join(dir, file) %>
+              <li>
+                <a href="/?file=<%= CGI.escape(full_path) %>&dir=<%= CGI.escape(@current_dir) %>" class="<%= full_path == @current_file ? 'active' : '' %>">
+                  <%= file %>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </div>
       <% end %>
-    </ul>
+    </div>
   </div>
 
   <div class="content">
@@ -600,6 +723,78 @@
         form.submit();
       }
     }
+
+    // Directory accordion functions
+    function toggleDirectory(header) {
+      const section = header.parentElement;
+      const filesList = section.querySelector('.directory-files');
+      const arrow = header.querySelector('.directory-arrow');
+      const dir = header.getAttribute('data-dir');
+
+      const isExpanded = filesList.style.display !== 'none';
+
+      // Toggle visibility
+      filesList.style.display = isExpanded ? 'none' : '';
+      arrow.textContent = isExpanded ? '►' : '▼';
+
+      // Save state to localStorage
+      const key = 'markymark_dir_' + dir.replace(/[^a-zA-Z0-9]/g, '_');
+      localStorage.setItem(key, isExpanded ? 'collapsed' : 'expanded');
+    }
+
+    function expandAllDirectories() {
+      document.querySelectorAll('.directory-section').forEach(function(section) {
+        const filesList = section.querySelector('.directory-files');
+        const arrow = section.querySelector('.directory-arrow');
+        const header = section.querySelector('.directory-header');
+        const dir = header.getAttribute('data-dir');
+
+        filesList.style.display = '';
+        arrow.textContent = '▼';
+
+        // Save state
+        const key = 'markymark_dir_' + dir.replace(/[^a-zA-Z0-9]/g, '_');
+        localStorage.setItem(key, 'expanded');
+      });
+    }
+
+    function collapseAllDirectories() {
+      document.querySelectorAll('.directory-section').forEach(function(section) {
+        const filesList = section.querySelector('.directory-files');
+        const arrow = section.querySelector('.directory-arrow');
+        const header = section.querySelector('.directory-header');
+        const dir = header.getAttribute('data-dir');
+
+        filesList.style.display = 'none';
+        arrow.textContent = '►';
+
+        // Save state
+        const key = 'markymark_dir_' + dir.replace(/[^a-zA-Z0-9]/g, '_');
+        localStorage.setItem(key, 'collapsed');
+      });
+    }
+
+    // Restore directory states from localStorage on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.directory-section').forEach(function(section) {
+        const header = section.querySelector('.directory-header');
+        const filesList = section.querySelector('.directory-files');
+        const arrow = section.querySelector('.directory-arrow');
+        const dir = header.getAttribute('data-dir');
+
+        const key = 'markymark_dir_' + dir.replace(/[^a-zA-Z0-9]/g, '_');
+        const state = localStorage.getItem(key);
+
+        if (state === 'collapsed') {
+          filesList.style.display = 'none';
+          arrow.textContent = '►';
+        } else if (state === 'expanded') {
+          filesList.style.display = '';
+          arrow.textContent = '▼';
+        }
+        // If no state in localStorage, use default from template (root expanded, others collapsed)
+      });
+    });
   </script>
 </body>
 </html>

@@ -13,6 +13,7 @@
 
 - 🔄 **Smart directory switching** - Run `markymark` from any directory to switch existing server or start new one
 - 📁 **Auto-discovery** - Recursively finds all your markdown files
+- 📂 **Accordion file organization** - Files grouped by directory with expand/collapse controls and localStorage persistence
 - 📂 **Directory switching** - Browse and change your documentation root directory via the UI
 - 🔖 **Bookmarks** - Save frequently-used directories for quick access (stored in `~/.markymark/bookmarks.json`)
 - 🚀 **Quick shortcuts** - Jump to common locations (Home, Downloads, Work) from the browse page

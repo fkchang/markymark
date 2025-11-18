@@ -57,6 +57,27 @@ module Markymark
         end.sort
       end
 
+      def group_files_by_directory(files)
+        grouped = {}
+        files.each do |file|
+          dir = File.dirname(file)
+          dir = "." if dir == "."
+          grouped[dir] ||= []
+          grouped[dir] << File.basename(file)
+        end
+        # Sort directories, with "." (root) first
+        sorted_dirs = grouped.keys.sort do |a, b|
+          if a == "."
+            -1
+          elsif b == "."
+            1
+          else
+            a <=> b
+          end
+        end
+        sorted_dirs.map { |dir| [dir, grouped[dir].sort] }.to_h
+      end
+
       def render_markdown(file_path, root_path = @root_path)
         full_path = File.join(root_path, file_path)
         return nil unless File.exist?(full_path) && File.file?(full_path)
@@ -147,6 +168,7 @@ module Markymark
       current_dir = get_directory_from_params
       @current_dir = current_dir  # Make available to template for preserving in links
       @files = self.class.find_markdown_files(current_dir)
+      @files_grouped = self.class.group_files_by_directory(@files)
       @bookmarks = self.class.load_bookmarks
       @current_file = params[:file]
 
