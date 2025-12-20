@@ -320,9 +320,7 @@ module Markymark
         end
       end
 
-      parser.parse!(args)
-
-      # Handle 'init' subcommand
+      # Handle 'init' subcommand BEFORE parsing (it has its own flags)
       if args.first == 'init'
         args.shift
         accept_defaults = args.include?('-y') || args.include?('--yes')
@@ -330,6 +328,8 @@ module Markymark
         wizard.run
         exit 0
       end
+
+      parser.parse!(args)
 
       # First non-option argument is the path
       @root_path = args.first if args.any?
