@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "puma", "~> 6.0"
   spec.add_dependency "kramdown", "~> 2.4"
   spec.add_dependency "kramdown-parser-gfm", "~> 1.1"
+  spec.add_dependency "rouge", "~> 4.0"
   spec.add_dependency "listen", "~> 3.8"
   spec.add_dependency "launchy", "~> 2.5"
 

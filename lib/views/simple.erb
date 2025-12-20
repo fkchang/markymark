@@ -560,12 +560,18 @@
       font-style: italic;
       border-bottom: none;
     }
+
+    /* Syntax highlighting - Rouge GitHub theme for light mode */
+    <%= Rouge::Themes::Github.render(scope: '.highlight') %>
+
+    /* Syntax highlighting - Rouge dark theme for dark mode */
+    <%= Rouge::Themes::Base16.mode(:dark).render(scope: '[data-theme="dark"] .highlight') %>
   </style>
 </head>
 <body>
   <div class="app-header">
     <div class="app-branding">
-      <img src="/assets/marky-mark-icon.png" alt="markymark" class="app-icon">
+      <img src="/assets/marky-mark-icon2.png" alt="markymark" class="app-icon">
       <span class="app-name">markymark</span>
     </div>
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">

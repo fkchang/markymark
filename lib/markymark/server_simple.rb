@@ -3,6 +3,7 @@
 require 'sinatra/base'
 require 'json'
 require 'kramdown'
+require 'rouge'
 require 'launchy'
 require 'pathname'
 require 'fileutils'
@@ -30,31 +31,90 @@ module Markymark
         @real_root_path = File.realpath(@root_path)
 
         # Print startup message
-        url = "http://localhost:#{cli.port}"
-        puts "markymark serving #{@root_path} on #{url}"
-        puts "Press Ctrl+C to stop"
+        base_url = "http://localhost:#{cli.port}"
+        puts "markymark serving #{@root_path} on #{base_url}"
 
-        # Open browser if requested
-        Launchy.open(url) if cli.open_browser
-
-        # Write PID file for server detection
-        write_pid_file(cli.port)
-
-        # Clean up PID file on exit
-        at_exit do
-          delete_pid_file
+        # Build URL with optional file parameter
+        url = if cli.initial_file
+          "#{base_url}/?file=#{CGI.escape(cli.initial_file)}"
+        else
+          base_url
         end
 
-        # Start server
-        set :port, cli.port
-        run!
+        # Open browser if requested (before forking)
+        Launchy.open(url) if cli.open_browser
+
+        # Fork the process to run server in background
+        pid = fork do
+          # In child process - run the server
+
+          # Detach from terminal
+          Process.setsid
+
+          # Redirect output to /dev/null
+          $stdout.reopen('/dev/null', 'w')
+          $stderr.reopen('/dev/null', 'w')
+
+          # Write PID file for server detection
+          write_pid_file(cli.port)
+
+          # Clean up PID file on exit
+          at_exit do
+            delete_pid_file
+          end
+
+          # Start server
+          set :port, cli.port
+          run!
+        end
+
+        # In parent process - detach child and exit
+        Process.detach(pid)
+
+        # Give server a moment to start
+        sleep 1
+
+        puts "Server started in background (PID: #{pid})"
       end
 
       def find_markdown_files(root_path = @root_path)
         pattern = File.join(root_path, '**', '*.{md,markdown}')
-        Dir.glob(pattern, File::FNM_CASEFOLD).map do |full_path|
-          Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
-        end.sort
+        begin
+          Dir.glob(pattern, File::FNM_CASEFOLD).map do |full_path|
+            Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
+          end.sort
+        rescue Errno::EPERM, Errno::EACCES => e
+          # Permission denied on some subdirectory - fall back to non-recursive scan
+          warn "Warning: Permission denied scanning #{root_path}, using non-recursive scan"
+          find_markdown_files_safe(root_path)
+        end
+      end
+
+      def find_markdown_files_safe(root_path)
+        # Non-recursive scan that skips protected directories
+        files = []
+        dirs_to_scan = [root_path]
+
+        while dirs_to_scan.any?
+          dir = dirs_to_scan.shift
+          begin
+            Dir.entries(dir).each do |entry|
+              next if entry.start_with?('.')
+              full_path = File.join(dir, entry)
+              if File.directory?(full_path)
+                # Skip known protected directories
+                next if full_path.include?('/Library/')
+                dirs_to_scan << full_path
+              elsif entry.match?(/\.(md|markdown)$/i)
+                files << Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
+              end
+            end
+          rescue Errno::EPERM, Errno::EACCES
+            # Skip directories we can't access
+            next
+          end
+        end
+        files.sort
       end
 
       def group_files_by_directory(files)
@@ -82,7 +142,7 @@ module Markymark
         full_path = File.join(root_path, file_path)
         return nil unless File.exist?(full_path) && File.file?(full_path)
 
-        content = File.read(full_path)
+        content = File.read(full_path, encoding: 'UTF-8')
         html = Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
 
         # Convert mermaid code blocks to divs for mermaid.js rendering

@@ -10,12 +10,13 @@ module Markymark
   class CLI
     DEFAULT_PORT = 4545
 
-    attr_reader :root_path, :port, :open_browser
+    attr_reader :root_path, :port, :open_browser, :initial_file
 
     def initialize(args)
       @root_path = Dir.pwd
       @port = DEFAULT_PORT
       @open_browser = true
+      @initial_file = nil
 
       parse_options(args)
       validate!
@@ -24,7 +25,32 @@ module Markymark
     def self.run(args)
       cli = new(args)
 
-      # Check if a markymark server is already running
+      # Check if pumadev mode is active
+      if PumadevManager.active?
+        puts "Pumadev mode is active"
+        # In pumadev mode - switch directory via pumadev manager
+        if PumadevManager.switch_directory(cli.root_path)
+          puts "Switched to #{cli.root_path}"
+          puts "Access markymark at: http://markymark.test"
+
+          # Open browser if requested
+          if cli.open_browser
+            require 'launchy'
+            url = if cli.initial_file
+              "http://markymark.test/?file=#{CGI.escape(cli.initial_file)}"
+            else
+              'http://markymark.test'
+            end
+            Launchy.open(url)
+          end
+        else
+          warn "Failed to switch directory in pumadev mode"
+          exit 1
+        end
+        return
+      end
+
+      # Check if a standalone server is already running
       existing_server = cli.send(:detect_existing_server)
 
       if existing_server
@@ -45,6 +71,125 @@ module Markymark
       exit 1
     end
 
+    def self.stop_server
+      # Check if pumadev mode is active first
+      if PumadevManager.active?
+        PumadevManager.teardown
+        exit 0
+      end
+
+      # Check for standalone server
+      pid_file = File.expand_path('~/.markymark/server.pid')
+
+      unless File.exist?(pid_file)
+        puts "No markymark server is running"
+        exit 0
+      end
+
+      # Read PID file
+      content = File.read(pid_file)
+      port = content[/port=(\d+)/, 1]&.to_i
+      pid = content[/pid=(\d+)/, 1]&.to_i
+
+      unless pid
+        puts "Invalid PID file"
+        File.delete(pid_file)
+        exit 1
+      end
+
+      # Check if process is still running
+      begin
+        Process.kill(0, pid)
+      rescue Errno::ESRCH
+        puts "Server process not found (PID: #{pid})"
+        File.delete(pid_file)
+        exit 0
+      end
+
+      puts "Stopping markymark server (PID: #{pid}, port: #{port})..."
+
+      # Try graceful shutdown first (SIGTERM)
+      begin
+        Process.kill('TERM', pid)
+
+        # Wait up to 3 seconds for graceful shutdown
+        3.times do
+          sleep 1
+          begin
+            Process.kill(0, pid)
+          rescue Errno::ESRCH
+            # Process has exited
+            puts "Server stopped successfully"
+            File.delete(pid_file) if File.exist?(pid_file)
+            exit 0
+          end
+        end
+
+        # If still running, force kill
+        puts "Server didn't stop gracefully, forcing shutdown..."
+        Process.kill('KILL', pid)
+        sleep 1
+
+        puts "Server stopped (forced)"
+        File.delete(pid_file) if File.exist?(pid_file)
+      rescue Errno::ESRCH
+        puts "Server stopped successfully"
+        File.delete(pid_file) if File.exist?(pid_file)
+      rescue => e
+        warn "Error stopping server: #{e.message}"
+        exit 1
+      end
+    end
+
+    def self.show_status
+      puts "Markymark Status"
+      puts "=" * 40
+
+      # Check macOS app status
+      if RUBY_PLATFORM.include?('darwin')
+        app_status = AppInstaller.status
+        if app_status
+          puts ""
+          puts "macOS App:"
+          puts "  #{app_status[:message]}"
+        end
+      end
+
+      # Check pumadev
+      pumadev_status = PumadevManager.status
+      if pumadev_status
+        puts ""
+        puts "Server Mode: Pumadev"
+        puts "  #{pumadev_status[:message]}"
+        return
+      end
+
+      # Check standalone server
+      pid_file = File.expand_path('~/.markymark/server.pid')
+      unless File.exist?(pid_file)
+        puts ""
+        puts "Server: Not running"
+        return
+      end
+
+      content = File.read(pid_file)
+      port = content[/port=(\d+)/, 1]&.to_i
+      pid = content[/pid=(\d+)/, 1]&.to_i
+
+      # Check if process is still running
+      begin
+        Process.kill(0, pid)
+        puts ""
+        puts "Server Mode: Standalone"
+        puts "  Running (PID: #{pid}, port: #{port})"
+        puts "  Access at: http://localhost:#{port}"
+      rescue Errno::ESRCH
+        puts ""
+        puts "Server: Not running (stale PID file removed)"
+        File.delete(pid_file)
+      end
+    end
+
     def self.show_pumadev_instructions
       puts <<~INSTRUCTIONS
         Pumadev Setup for markymark
@@ -52,7 +197,10 @@ module Markymark
 
         Pumadev allows you to access markymark via a .test domain instead of remembering ports.
 
-        Setup Instructions:
+        Quick Setup:
+          markymark --setup-pumadev [PATH]
+
+        Manual Setup Instructions:
 
         1. Install pumadev (if not already installed):
            gem install puma-dev
@@ -78,8 +226,8 @@ module Markymark
 
         Smart Directory Switching:
         - The smart directory switching feature works with pumadev
-        - Run 'markymark' from any directory to switch the server
-        - The MARKYMARK_ROOT environment variable can be set if needed
+        - Run 'markymark [PATH]' from any directory to switch the server
+        - The directory setting persists across requests
 
         For more information: https://github.com/puma/puma-dev
       INSTRUCTIONS
@@ -93,9 +241,14 @@ module Markymark
           markymark - Browse markdown documentation with live reload
 
           Usage: markymark [PATH] [OPTIONS]
+                 markymark init [-y]
 
           Arguments:
-            PATH                     Directory to browse (default: current directory)
+            PATH                     Directory or markdown file to browse (default: current directory)
+                                     If a file is specified, opens that directory with the file displayed
+
+          Commands:
+            init                     Interactive setup wizard (use -y to accept defaults)
 
           Options:
         BANNER
@@ -108,6 +261,10 @@ module Markymark
           @open_browser = false
         end
 
+        opts.on('--stop', 'Stop the running markymark server') do
+          CLI.stop_server
+        end
+
         opts.on('-h', '--help', 'Show this help message') do
           puts opts
           exit
@@ -118,13 +275,61 @@ module Markymark
           exit
         end
 
-        opts.on('--pumadev', 'Show pumadev setup instructions') do
-          show_pumadev_instructions
+        opts.on('--setup-pumadev [PATH]', 'Setup pumadev integration with optional path') do |path|
+          if PumadevManager.setup(path)
+            require 'launchy'
+            Launchy.open('http://markymark.test')
+          else
+            exit 1
+          end
+          exit 0
+        end
+
+        opts.on('--status', 'Show current server status') do
+          CLI.show_status
           exit
+        end
+
+        opts.on('--pumadev-info', 'Show pumadev setup instructions') do
+          CLI.show_pumadev_instructions
+          exit
+        end
+
+        opts.on('--install-app', 'Install macOS app bundle to ~/Applications') do
+          if AppInstaller.install
+            exit 0
+          else
+            exit 1
+          end
+        end
+
+        opts.on('--uninstall-app', 'Remove macOS app bundle') do
+          if AppInstaller.uninstall
+            exit 0
+          else
+            exit 1
+          end
+        end
+
+        opts.on('--set-default', 'Set Markymark as default handler for .md files') do
+          if AppInstaller.set_default_handler
+            exit 0
+          else
+            exit 1
+          end
         end
       end
 
       parser.parse!(args)
+
+      # Handle 'init' subcommand
+      if args.first == 'init'
+        args.shift
+        accept_defaults = args.include?('-y') || args.include?('--yes')
+        wizard = InitWizard.new(accept_defaults: accept_defaults)
+        wizard.run
+        exit 0
+      end
 
       # First non-option argument is the path
       @root_path = args.first if args.any?
@@ -137,11 +342,16 @@ module Markymark
         raise ArgumentError, "Path does not exist: #{@root_path}"
       end
 
-      unless File.directory?(expanded_path)
-        raise ArgumentError, "Path is not a directory: #{@root_path}"
+      # If path is a file, extract directory and filename
+      if File.file?(expanded_path)
+        unless expanded_path =~ /\.(md|markdown)$/i
+          raise ArgumentError, "File must be a markdown file (.md or .markdown): #{@root_path}"
+        end
+        @initial_file = File.basename(expanded_path)
+        @root_path = File.realpath(File.dirname(expanded_path))
+      else
+        @root_path = File.realpath(expanded_path)
       end
-
-      @root_path = File.realpath(expanded_path)
 
       unless @port.between?(1, 65535)
         raise ArgumentError, "Port must be between 1 and 65535"
@@ -194,7 +404,12 @@ module Markymark
 
         # Open browser if requested
         if @open_browser
-          url = "http://localhost:#{server_info[:port]}"
+          base_url = "http://localhost:#{server_info[:port]}"
+          url = if @initial_file
+            "#{base_url}/?file=#{CGI.escape(@initial_file)}"
+          else
+            base_url
+          end
           require 'launchy'
           Launchy.open(url)
         end
@@ -248,9 +463,9 @@ module Markymark
           http.request(request)
         end
 
-        if response.is_a?(Net::HTTPSuccess)
-          data = JSON.parse(response.body)
-          return data['success']
+        # Server returns 303 redirect on successful directory change
+        if response.is_a?(Net::HTTPSuccess) || response.is_a?(Net::HTTPRedirection)
+          return true
         else
           warn "Server returned error: #{response.code}"
           return false
