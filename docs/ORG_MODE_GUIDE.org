@@ -1,0 +1,338 @@
+#+TITLE: MarkyMark Org-mode Support
+#+AUTHOR: Forrest Chang
+#+DESCRIPTION: A guide to org-mode support in MarkyMark, written in org-mode
+
+* Introduction to MarkyMark
+:PROPERTIES:
+:CUSTOM_ID: introduction
+:END:
+
+MarkyMark is a lightweight documentation viewer designed for developers who work with markup-based documentation. It provides:
+
+- *Real-time file watching* with automatic refresh
+- *Syntax highlighting* via Rouge
+- *Mermaid diagram* rendering
+- *Dark/light theme* toggle
+- *Directory browsing* with bookmarks
+
+And now, *org-mode support* - bringing the power of Emacs' org-mode to your browser.
+
+** Why Another Documentation Viewer?
+:PROPERTIES:
+:CUSTOM_ID: why-markymark
+:END:
+
+Most documentation viewers treat files as read-only outputs. MarkyMark treats them as /living documents/ that you edit alongside your code. The viewer updates instantly as you write.
+
+* DONE Org-mode Support :feature:v1:
+:PROPERTIES:
+:CUSTOM_ID: org-mode-support
+:COMPLETED: 2024-12-22
+:END:
+
+Org-mode is Emacs' powerful markup language for notes, documentation, and literate programming. MarkyMark now renders =.org= files with full support for the features that make org-mode superior to Markdown for technical documentation.
+
+** What Makes Org-mode Powerful?
+
+Org-mode wasn't designed as "just another markup language." It was designed as a /structured document format/ with:
+
+1. *Metadata everywhere* - Properties, tags, TODO states
+2. *Stable references* - CUSTOM_ID for permanent links
+3. *Named elements* - Code blocks you can reference by name
+4. *Native task tracking* - TODO/DONE built into headings
+
+This guide demonstrates these features /by using them/.
+
+* Feature Showcase :demo:
+:PROPERTIES:
+:CUSTOM_ID: features
+:END:
+
+** TODO States and Tags :workflow:
+:PROPERTIES:
+:CUSTOM_ID: todo-states
+:END:
+
+Every heading can have a TODO state. This isn't just visual decoration - it's /structured data/ that tools can query and manipulate.
+
+*** TODO Implement custom TODO states :enhancement:
+Allow users to define their own states like =WAITING=, =REVIEW=, =BLOCKED=.
+
+*** DONE Basic TODO/DONE support :core:
+The renderer displays TODO states as colored badges.
+
+*** DONE Tag rendering :core:
+Tags appear as pills on the right side of headings.
+
+** Properties Drawers :metadata:
+:PROPERTIES:
+:CUSTOM_ID: properties
+:AUTHOR: Forrest Chang
+:CREATED: 2024-12-22
+:CATEGORY: documentation
+:END:
+
+Properties drawers attach /structured metadata/ to any heading. Click "Properties" above to expand.
+
+Common uses:
+- =CUSTOM_ID= - Stable anchor for linking (this section is =#properties=)
+- =CREATED= / =MODIFIED= - Timestamps
+- =AUTHOR= - Attribution
+- =CATEGORY= - Classification
+
+In Markdown, you'd need YAML frontmatter (document-level only) or HTML comments (not rendered).
+
+** Source Code Blocks :code:
+:PROPERTIES:
+:CUSTOM_ID: code-blocks
+:END:
+
+Org-mode code blocks can be /named/, making them referenceable.
+
+#+NAME: hello-world-example
+#+BEGIN_SRC ruby
+# A simple greeting in Ruby
+def greet(name)
+  puts "Hello, #{name}!"
+end
+
+greet("Org-mode")
+#+END_SRC
+
+The block above has the name =hello-world-example= and displays a caption. This enables:
+- Referencing the block from text
+- Literate programming (in full org-mode)
+- Clear identification in long documents
+
+Compare to Markdown's anonymous fenced blocks:
+#+BEGIN_EXAMPLE
+```ruby
+# No name, no caption, just code
+def greet(name)
+  puts "Hello, #{name}!"
+end
+```
+#+END_EXAMPLE
+
+** Tables :data:
+:PROPERTIES:
+:CUSTOM_ID: tables
+:END:
+
+Org-mode tables use a cleaner syntax than Markdown:
+
+| Feature          | Org-mode | Markdown |
+|------------------+----------+----------|
+| TODO states      | Native   | None     |
+| Tags             | Native   | None     |
+| Properties       | Native   | YAML[fn:1] |
+| Named blocks     | Native   | None     |
+| Checkboxes       | Native   | GFM only |
+| Footnotes        | Native   | Extension |
+| Stable IDs       | CUSTOM_ID | Manual   |
+
+The =+= characters in separators auto-align in Emacs. The rendered output is identical, but the /source/ is more structured.
+
+** Lists with Checkboxes :tasks:
+:PROPERTIES:
+:CUSTOM_ID: lists
+:END:
+
+Org-mode lists support checkboxes natively:
+
+*MarkyMark Org-mode Implementation Checklist:*
+
+- [X] AST-first parser design
+- [X] Stable ID generation
+- [X] Heading with TODO/tags/properties
+- [X] Source blocks with names
+- [X] Tables
+- [X] Lists with checkboxes
+- [X] Footnotes with backlinks
+- [ ] Nested list improvements
+- [ ] Custom TODO states
+- [ ] Drawer types beyond PROPERTIES
+
+These aren't just bullets with brackets - they're /semantic checkboxes/ that Emacs can aggregate and track.
+
+** Inline Formatting :style:
+:PROPERTIES:
+:CUSTOM_ID: inline
+:END:
+
+Org-mode offers richer inline formatting than standard Markdown:
+
+| Syntax | Renders As | Markdown Equivalent |
+|--------+------------+---------------------|
+| =*bold*= | *bold* | =**bold**= |
+| =/italic/= | /italic/ | =*italic*= |
+| =~code~= | ~code~ | =`code`= |
+| ==verbatim== | =verbatim= | =`code`= (same) |
+| =+strike+= | +strikethrough+ | =~~strike~~= (GFM) |
+| =_underline_= | _underline_ | None (use HTML) |
+
+Note: Org-mode distinguishes between =~code~= (for code) and ==verbatim== (for literal text). Markdown conflates these.
+
+** Footnotes :references:
+:PROPERTIES:
+:CUSTOM_ID: footnotes
+:END:
+
+Footnotes in org-mode are first-class citizens with bidirectional linking[fn:2].
+
+When you click a footnote reference, you jump to the definition. The definition includes a backlink to return to the reference point. This is automatic - no manual anchor management.
+
+Markdown's footnote support (when available) varies by implementation. GitHub doesn't support them in READMEs. Many parsers don't support them at all.
+
+** Quote and Example Blocks :blocks:
+:PROPERTIES:
+:CUSTOM_ID: blocks
+:END:
+
+#+BEGIN_QUOTE
+Org-mode is not just a markup language. It's a way of thinking about documents as /structured data/ that happens to render nicely.
+
+--- Every Emacs user, eventually
+#+END_QUOTE
+
+Example blocks preserve whitespace exactly:
+
+#+BEGIN_EXAMPLE
+  This text preserves
+    its exact
+      indentation
+        and spacing.
+#+END_EXAMPLE
+
+* Architecture :technical:
+:PROPERTIES:
+:CUSTOM_ID: architecture
+:END:
+
+MarkyMark's org-mode support uses an *AST-first architecture*:
+
+#+BEGIN_SRC text
+                    ┌─────────────┐
+   .org file ──────▶│  org-ruby   │──────▶ Parsed headlines
+                    └─────────────┘        & body lines
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   Parser    │──────▶ MarkyMark AST
+                    └─────────────┘        (Document, Heading,
+                           │                Paragraph, etc.)
+                           ▼
+                    ┌─────────────┐
+                    │  Renderer   │──────▶ Semantic HTML
+                    └─────────────┘        with stable IDs
+#+END_SRC
+
+This design enables:
+- *Stable IDs* derived from heading paths and CUSTOM_ID
+- *Semantic HTML* with proper =<section>=, =<details>=, etc.
+- *Future extensibility* for additional features
+
+** Node Types
+:PROPERTIES:
+:CUSTOM_ID: node-types
+:END:
+
+The AST includes these node types:
+
+| Node          | Purpose                              |
+|---------------+--------------------------------------|
+| Document      | Root container with title/properties |
+| Heading       | Section with level, TODO, tags       |
+| Paragraph     | Block of inline content              |
+| SrcBlock      | Named source code                    |
+| ExampleBlock  | Verbatim text                        |
+| QuoteBlock    | Block quotation                      |
+| Table         | Tabular data                         |
+| List          | Ordered/unordered list               |
+| ListItem      | Item with optional checkbox          |
+| FootnoteRef   | Reference to footnote                |
+| FootnoteDef   | Footnote definition                  |
+| Link          | Hyperlink with description           |
+| Text, Bold... | Inline formatting                    |
+
+* TODO Future Roadmap :planning:
+:PROPERTIES:
+:CUSTOM_ID: roadmap
+:END:
+
+** TODO Custom TODO States :enhancement:
+:PROPERTIES:
+:PRIORITY: B
+:END:
+
+Support #+TODO: and #+SEQ_TODO: for custom workflow states.
+
+** TODO Additional Drawer Types :enhancement:
+:PROPERTIES:
+:PRIORITY: C
+:END:
+
+Currently only PROPERTIES drawer is supported. Add support for:
+- LOGBOOK (time tracking)
+- Custom named drawers
+
+** TODO Upstream Contribution :community:
+:PROPERTIES:
+:PRIORITY: A
+:END:
+
+The AST design could benefit the broader org-ruby ecosystem. GitHub uses org-ruby for rendering .org files - contributing AST support upstream would:
+
+1. Improve org-mode rendering on GitHub
+2. Benefit all org-ruby users
+3. Share maintenance with the community
+
+* Comparison: Org-mode vs Markdown :comparison:
+:PROPERTIES:
+:CUSTOM_ID: comparison
+:END:
+
+See [[file:MARKDOWN_COMPARISON.md][MARKDOWN_COMPARISON.md]] for a side-by-side comparison attempting the same content in Markdown.
+
+Key differences:
+
+| Capability           | Org-mode                    | Markdown               |
+|----------------------+-----------------------------+------------------------|
+| Task states          | =* TODO Heading=              | Manual (badges/emoji)  |
+| Tags                 | =* Heading :tag:=             | None                   |
+| Heading metadata     | Properties drawer           | None (YAML is global)  |
+| Stable anchors       | =CUSTOM_ID= property          | Manual =<a id="">= |
+| Named code blocks    | =#+NAME: block-name=          | None                   |
+| Checkboxes           | =- [ ] item=                  | GFM only               |
+| Footnotes            | Native with backlinks       | Extension, varies      |
+| Underline            | =_underline_=                 | None (use HTML)        |
+| Verbatim vs Code     | ==verbatim== vs =~code~=        | Both use backticks     |
+
+* Getting Started :usage:
+:PROPERTIES:
+:CUSTOM_ID: getting-started
+:END:
+
+To use org-mode with MarkyMark:
+
+1. Create a =.org= file in your documentation directory
+2. Run =markymark= to start the server
+3. Your org files appear alongside markdown files
+4. Edit in your favorite editor - changes appear instantly
+
+#+BEGIN_SRC bash
+# Install markymark
+gem install markymark
+
+# Start viewing documentation
+cd your-project
+markymark
+#+END_SRC
+
+Links between =.org= and =.md= files work seamlessly. Use [[file:../README.md][relative links]] to connect your documentation.
+
+* Footnotes
+
+[fn:1] YAML frontmatter only works at document level and isn't part of standard Markdown.
+
+[fn:2] This is a footnote demonstrating bidirectional linking. Click the backlink arrow to return to where you were reading.

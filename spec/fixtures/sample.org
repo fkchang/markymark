@@ -1,0 +1,65 @@
+#+TITLE: Test Document
+#+AUTHOR: Test Author
+
+* TODO First Heading :tag1:tag2:
+:PROPERTIES:
+:CUSTOM_ID: custom-first
+:CATEGORY: testing
+:END:
+
+Some paragraph text with *bold* and /italic/ formatting.
+
+A link: [[https://example.com][Example Site]]
+
+** DONE Nested Heading
+
+This heading is marked as DONE.
+
+#+NAME: my-code-block
+#+BEGIN_SRC ruby
+def hello
+  puts "Hello, World!"
+end
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+This is an example block.
+It preserves whitespace.
+#+END_EXAMPLE
+
+#+BEGIN_QUOTE
+This is a quote block.
+It can span multiple lines.
+#+END_QUOTE
+
+| Name  | Age | City     |
+|-------+-----+----------|
+| Alice | 30  | New York |
+| Bob   | 25  | Boston   |
+
+- Item one
+- Item two
+  - Nested item
+- [ ] Unchecked checkbox
+- [X] Checked checkbox
+
+1. First ordered item
+2. Second ordered item
+
+Here is a footnote reference[fn:1].
+
+And another reference[fn:note].
+
+* Second Top-Level Heading
+
+More content here.
+
+-----
+
+Above was a horizontal rule.
+
+* Footnotes
+
+[fn:1] This is the first footnote definition.
+
+[fn:note] This is another footnote with a named label.

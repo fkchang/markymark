@@ -179,7 +179,7 @@ RSpec.describe Markymark::ServerSimple do
 
       html = described_class.render_markdown('test.md', @test_dir)
 
-      expect(html).to include('Error rendering markdown')
+      expect(html).to include('Error rendering document')
       expect(html).to include('Read error')
     end
   end
@@ -467,6 +467,75 @@ RSpec.describe Markymark::ServerSimple do
       result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
 
       expect(result).to eq(html)
+    end
+  end
+
+  describe '.resolve_editor' do
+    before do
+      # Clear all editor-related env vars
+      @saved_env = {}
+      %w[MARKYMARK_EDITOR_MD MARKYMARK_EDITOR_ORG MARKYMARK_EDITOR VISUAL EDITOR].each do |var|
+        @saved_env[var] = ENV[var]
+        ENV.delete(var)
+      end
+    end
+
+    after do
+      # Restore env vars
+      @saved_env.each do |var, value|
+        if value
+          ENV[var] = value
+        else
+          ENV.delete(var)
+        end
+      end
+    end
+
+    it 'returns filetype-specific editor when set' do
+      ENV['MARKYMARK_EDITOR_ORG'] = 'emacs'
+      ENV['MARKYMARK_EDITOR'] = 'code'
+
+      expect(described_class.resolve_editor('.org')).to eq('emacs')
+    end
+
+    it 'returns MARKYMARK_EDITOR when filetype-specific not set' do
+      ENV['MARKYMARK_EDITOR'] = 'code'
+      ENV['VISUAL'] = 'vim'
+
+      expect(described_class.resolve_editor('.md')).to eq('code')
+    end
+
+    it 'returns VISUAL when MARKYMARK_EDITOR not set' do
+      ENV['VISUAL'] = 'vim'
+      ENV['EDITOR'] = 'nano'
+
+      expect(described_class.resolve_editor('.md')).to eq('vim')
+    end
+
+    it 'returns EDITOR when VISUAL not set' do
+      ENV['EDITOR'] = 'nano'
+
+      expect(described_class.resolve_editor('.md')).to eq('nano')
+    end
+
+    it 'returns platform default when no env vars set' do
+      result = described_class.resolve_editor('.md')
+
+      # On macOS this should be 'open'
+      expect(['open', 'xdg-open', 'start']).to include(result)
+    end
+
+    it 'handles uppercase extension in env var lookup' do
+      ENV['MARKYMARK_EDITOR_MD'] = 'typora'
+
+      expect(described_class.resolve_editor('.md')).to eq('typora')
+    end
+
+    it 'skips empty env vars' do
+      ENV['MARKYMARK_EDITOR'] = ''
+      ENV['VISUAL'] = 'vim'
+
+      expect(described_class.resolve_editor('.md')).to eq('vim')
     end
   end
 end

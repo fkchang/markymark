@@ -53,6 +53,8 @@ gem install markymark && markymark init -y
 - 🎨 **GitHub-Flavored Markdown** - Tables, task lists, syntax highlighting
 - 📊 **Mermaid diagrams** - Flowcharts, sequence diagrams render beautifully
 - 🌙 **Dark/Light theme toggle** - One-click switching, persisted in localStorage
+- 📋 **Copy file path** - One-click copy of full file path to clipboard (great for sharing with AI agents)
+- ✏️ **Edit in external editor** - Open current file in your preferred editor
 - 🔗 **Bookmarkable URLs** - Share links to specific docs
 - 🖼️ **Image support** - Images in `assets/` folders render properly
 - 🌐 **Pumadev integration** - Optional `.test` domain support
@@ -134,6 +136,25 @@ markymark includes a built-in directory browser accessible via the sidebar:
 - **Full navigation**: Browse to any directory on your system
 
 Bookmarks are stored in `~/.markymark/bookmarks.json` and persist across sessions.
+
+## Editor Configuration
+
+The **Edit** button (✏️) in the toolbar opens the current file in an external editor. The editor is determined in this order:
+
+1. `MARKYMARK_EDITOR_<EXT>` - Filetype-specific (e.g., `MARKYMARK_EDITOR_ORG` for `.org` files)
+2. `MARKYMARK_EDITOR` - General markymark override
+3. `VISUAL` - Standard Unix visual editor
+4. `EDITOR` - Standard Unix editor
+5. Platform default (`open` on macOS, `xdg-open` on Linux)
+
+```bash
+# Example: Use VS Code for markdown, Emacs for org files
+export MARKYMARK_EDITOR_MD="code"
+export MARKYMARK_EDITOR_ORG="emacs"
+
+# Or set a single editor for all files
+export MARKYMARK_EDITOR="code"
+```
 
 ## Why markymark?
 

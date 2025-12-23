@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Forrest Chang"]
   spec.email = ["fchang@hedgeye.com"]
 
-  spec.summary = "GitHub-Flavored Markdown viewer with live reload and Mermaid support"
-  spec.description = "A local web server for browsing markdown documentation with real-time file watching, syntax highlighting, and diagram rendering"
+  spec.summary = "GitHub-Flavored Markdown and Org-mode viewer with live reload and Mermaid support"
+  spec.description = "A local web server for browsing Markdown and Org-mode documentation with real-time file watching, syntax highlighting, and diagram rendering"
   spec.homepage = "https://github.com/fkchang/markymark"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7.0"
@@ -40,6 +40,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rouge", "~> 4.0"
   spec.add_dependency "listen", "~> 3.8"
   spec.add_dependency "launchy", "~> 2.5"
+  spec.add_dependency "org-ruby", "~> 0.9"
+
+  # Ruby 3.5+ compatibility - these are being removed from stdlib
+  spec.add_dependency "ostruct"
+  spec.add_dependency "logger"
 
   # Development dependencies
   spec.add_development_dependency "rake", "~> 13.0"

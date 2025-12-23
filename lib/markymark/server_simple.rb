@@ -78,7 +78,7 @@ module Markymark
       end
 
       def find_markdown_files(root_path = @root_path)
-        pattern = File.join(root_path, '**', '*.{md,markdown}')
+        pattern = File.join(root_path, '**', '*.{md,markdown,org}')
         begin
           Dir.glob(pattern, File::FNM_CASEFOLD).map do |full_path|
             Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
@@ -105,7 +105,7 @@ module Markymark
                 # Skip known protected directories
                 next if full_path.include?('/Library/')
                 dirs_to_scan << full_path
-              elsif entry.match?(/\.(md|markdown)$/i)
+              elsif entry.match?(/\.(md|markdown|org)$/i)
                 files << Pathname.new(full_path).relative_path_from(Pathname.new(root_path)).to_s
               end
             end
@@ -143,19 +143,27 @@ module Markymark
         return nil unless File.exist?(full_path) && File.file?(full_path)
 
         content = File.read(full_path, encoding: 'UTF-8')
-        html = Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
+        ext = File.extname(file_path).downcase
+
+        # Route to appropriate renderer based on extension
+        html = case ext
+               when '.org'
+                 Markymark::Org.to_html(content)
+               else
+                 Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
+               end
 
         # Convert mermaid code blocks to divs for mermaid.js rendering
         html = html.gsub(/<pre><code class="language-mermaid">(.*?)<\/code><\/pre>/m) do
           "<div class=\"mermaid\">#{$1}</div>"
         end
 
-        # Rewrite relative markdown links to use query parameters
+        # Rewrite relative document links to use query parameters
         html = rewrite_markdown_links(html, file_path, root_path)
 
         html
       rescue => e
-        "<p>Error rendering markdown: #{e.message}</p>"
+        "<p>Error rendering document: #{e.message}</p>"
       end
 
       def rewrite_markdown_links(html, current_file, root_path)
@@ -179,8 +187,8 @@ module Markymark
             next full_match
           end
 
-          # Only rewrite links to markdown files
-          if href =~ /\.(md|markdown)$/i
+          # Only rewrite links to markdown and org files
+          if href =~ /\.(md|markdown|org)$/i
             # Resolve the relative path from the current file's directory
             if current_dir == "."
               target_file = href
@@ -251,6 +259,28 @@ module Markymark
       def delete_pid_file
         File.delete(pid_file_path) if File.exist?(pid_file_path)
       end
+
+      # Resolve editor command based on file extension
+      # Order: MARKYMARK_EDITOR_<EXT> -> MARKYMARK_EDITOR -> VISUAL -> EDITOR -> platform default
+      def resolve_editor(extension)
+        editor_env_keys(extension)
+          .lazy
+          .map { |key| ENV[key] }
+          .find { |value| value && !value.empty? } || platform_default_editor
+      end
+
+      def editor_env_keys(extension)
+        ext = extension.delete('.').upcase
+        ["MARKYMARK_EDITOR_#{ext}", 'MARKYMARK_EDITOR', 'VISUAL', 'EDITOR']
+      end
+
+      def platform_default_editor
+        case RUBY_PLATFORM
+        when /darwin/           then 'open'
+        when /mingw|mswin|cygwin/ then 'start'
+        else                         'xdg-open'
+        end
+      end
     end
 
     # Helper methods for per-tab directory isolation via URL parameters
@@ -269,6 +299,22 @@ module Markymark
 
         # Fall back to server default
         self.class.root_path
+      end
+
+      # Validate file path is within directory and exists, returning full path or halting with error
+      def validate_file_within_directory!(dir, file)
+        full_path = File.join(dir, file)
+
+        unless File.exist?(full_path) && (File.file?(full_path) || File.symlink?(full_path))
+          json_or_text_error('File not found', 404)
+        end
+
+        normalized = File.expand_path(full_path)
+        unless normalized.start_with?(dir + File::SEPARATOR) || normalized == dir
+          json_or_text_error('Access denied', 403)
+        end
+
+        full_path
       end
     end
 
@@ -418,6 +464,29 @@ module Markymark
       index = params[:index]
       self.class.remove_bookmark(index)
       redirect '/'
+    end
+
+    # Edit file in external editor
+    post '/edit' do
+      content_type :json
+
+      dir = params[:dir]&.strip
+      file = params[:file]&.strip
+
+      json_or_text_error('Directory and file are required', 400) unless dir && !dir.empty? && file && !file.empty?
+
+      expanded_dir = File.expand_path(dir)
+      full_path = validate_file_within_directory!(expanded_dir, file)
+
+      editor = self.class.resolve_editor(File.extname(file))
+
+      pid = spawn(editor, full_path, [:out, :err] => '/dev/null')
+      Process.detach(pid)
+      { success: true }.to_json
+    rescue Errno::ENOENT
+      json_or_text_error("Editor not found: #{editor}", 500)
+    rescue => e
+      json_or_text_error("Failed to open editor: #{e.message}", 500)
     end
 
     # Static file serving from application assets or document root (for images, etc.)

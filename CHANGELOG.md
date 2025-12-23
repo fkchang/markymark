@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2025-12-23
+
+### Added
+- **Copy file path button** - Toolbar button to copy full filesystem path to clipboard
+- **Edit file button** - Toolbar button to open current file in external editor
+- **Configurable editor** - Environment variables for editor customization:
+  - `MARKYMARK_EDITOR_<EXT>` for filetype-specific editors (e.g., `MARKYMARK_EDITOR_ORG`)
+  - `MARKYMARK_EDITOR` for general override
+  - Falls back to `VISUAL`, `EDITOR`, then platform default
+- **Org-mode support** - Basic rendering of `.org` files with headings, TODO states, tags, tables, source blocks, and footnotes
+
+### Fixed
+- Added `ostruct` and `logger` dependencies for Ruby 3.5+ compatibility
+- Fixed file permissions warnings during gem build
+
 ## [0.1.1] - 2025-12-19
 
 ### Fixed

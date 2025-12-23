@@ -116,7 +116,13 @@
       color: var(--text-primary);
     }
 
-    .theme-toggle {
+    .header-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .action-btn {
       background: none;
       border: none;
       cursor: pointer;
@@ -126,8 +132,13 @@
       transition: background-color 0.2s;
     }
 
-    .theme-toggle:hover {
+    .action-btn:hover:not(:disabled) {
       background-color: var(--bg-hover);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .root-path {
@@ -566,6 +577,206 @@
 
     /* Syntax highlighting - Rouge dark theme for dark mode */
     <%= Rouge::Themes::Base16.mode(:dark).render(scope: '[data-theme="dark"] .highlight') %>
+
+    /* Org-mode specific styles */
+    .org-document-title {
+      margin-bottom: 1.5em;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .org-heading {
+      margin-bottom: 1em;
+    }
+
+    .org-heading > h1,
+    .org-heading > h2,
+    .org-heading > h3,
+    .org-heading > h4,
+    .org-heading > h5,
+    .org-heading > h6 {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5em;
+    }
+
+    .org-todo {
+      font-size: 0.75em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-family: monospace;
+    }
+
+    .org-todo-todo {
+      background-color: #ffcccc;
+      color: #cc0000;
+    }
+
+    [data-theme="dark"] .org-todo-todo {
+      background-color: #5c2020;
+      color: #ff9999;
+    }
+
+    .org-todo-done {
+      background-color: #ccffcc;
+      color: #008800;
+    }
+
+    [data-theme="dark"] .org-todo-done {
+      background-color: #205c20;
+      color: #99ff99;
+    }
+
+    .org-tags {
+      margin-left: auto;
+      font-size: 0.8em;
+    }
+
+    .org-tag {
+      background-color: var(--bg-code);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 4px;
+      font-family: monospace;
+      color: var(--text-secondary);
+    }
+
+    .org-properties {
+      margin: 0.5em 0 1em 0;
+      padding: 0.5em;
+      background-color: var(--bg-code);
+      border-radius: 4px;
+      font-size: 0.9em;
+      border: 1px solid var(--border-color);
+    }
+
+    .org-properties summary {
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .org-properties dl {
+      margin: 0.5em 0 0 1em;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.25em 1em;
+    }
+
+    .org-properties dt {
+      font-weight: bold;
+      font-family: monospace;
+      color: var(--text-secondary);
+    }
+
+    .org-properties dd {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    .org-src-block {
+      margin: 1em 0;
+    }
+
+    .org-src-block figcaption {
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      margin-bottom: 0.25em;
+      font-style: italic;
+    }
+
+    .org-src-block pre {
+      margin: 0;
+    }
+
+    .org-example-block {
+      background-color: var(--bg-code);
+      padding: 1em;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      border: 1px solid var(--border-color);
+      margin: 1em 0;
+    }
+
+    .org-quote-block {
+      border-left: 4px solid var(--border-highlight);
+      padding-left: 1em;
+      margin: 1em 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .org-table {
+      border-collapse: collapse;
+      margin: 1em 0;
+      width: auto;
+    }
+
+    .org-table caption {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5em;
+      text-align: left;
+    }
+
+    .org-table th,
+    .org-table td {
+      border: 1px solid var(--border-color);
+      padding: 0.5em 1em;
+      text-align: left;
+    }
+
+    .org-table th {
+      background-color: var(--bg-secondary);
+      font-weight: 600;
+    }
+
+    .org-table tr:hover td {
+      background-color: var(--bg-hover);
+    }
+
+    .org-footnote-def {
+      margin: 0.5em 0;
+      font-size: 0.9em;
+      padding-left: 2em;
+      position: relative;
+    }
+
+    .org-footnote-label {
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+    }
+
+    .org-footnote-backref {
+      margin-left: 0.5em;
+      text-decoration: none;
+      color: var(--text-link);
+    }
+
+    .org-footnote-backref:hover {
+      color: var(--text-link-hover);
+    }
+
+    .org-raw {
+      background-color: var(--bg-code);
+      padding: 1em;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      border: 1px dashed var(--border-color);
+      margin: 1em 0;
+      color: var(--text-secondary);
+    }
+
+    /* Org list checkbox styling */
+    .markdown-body li input[type="checkbox"] {
+      margin-right: 0.5em;
+    }
   </style>
 </head>
 <body>
@@ -574,9 +785,17 @@
       <img src="/assets/marky-mark-icon2.png" alt="markymark" class="app-icon">
       <span class="app-name">markymark</span>
     </div>
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-      <span id="theme-icon">🌙</span>
-    </button>
+    <div class="header-actions" data-current-file="<%= @current_file %>" data-current-dir="<%= @current_dir %>">
+      <button class="action-btn" id="copy-path-btn" aria-label="Copy file path" title="Copy file path" <%= @current_file ? '' : 'disabled' %>>
+        <span id="copy-icon">📋</span>
+      </button>
+      <button class="action-btn" id="edit-file-btn" aria-label="Edit file" title="Edit file" <%= @current_file ? '' : 'disabled' %>>
+        <span id="edit-icon">✏️</span>
+      </button>
+      <button class="action-btn" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span id="theme-icon">🌙</span>
+      </button>
+    </div>
   </div>
 
   <div class="main-container">
@@ -701,6 +920,87 @@
         // Reload page to re-render mermaid diagrams with new theme
         window.location.reload();
       });
+    })();
+
+    // Helper to get current file info from URL params or data attributes
+    function getCurrentFileInfo() {
+      const params = new URLSearchParams(window.location.search);
+      const headerActions = document.querySelector('.header-actions');
+
+      // Try URL params first, fall back to data attributes
+      const dir = params.get('dir') || (headerActions && headerActions.dataset.currentDir) || '';
+      const file = params.get('file') || (headerActions && headerActions.dataset.currentFile) || '';
+
+      return { dir, file };
+    }
+
+    // Copy file path functionality
+    (function() {
+      const copyBtn = document.getElementById('copy-path-btn');
+      const copyIcon = document.getElementById('copy-icon');
+
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async function() {
+          if (copyBtn.disabled) return;
+
+          const { dir, file } = getCurrentFileInfo();
+          if (!file) return;
+
+          const fullPath = dir ? (dir + '/' + file) : file;
+
+          try {
+            await navigator.clipboard.writeText(fullPath);
+            // Show feedback
+            const originalIcon = copyIcon.textContent;
+            copyIcon.textContent = '✓';
+            setTimeout(() => {
+              copyIcon.textContent = originalIcon;
+            }, 1500);
+          } catch (err) {
+            alert('Failed to copy path: ' + err.message);
+          }
+        });
+      }
+    })();
+
+    // Edit file functionality
+    (function() {
+      const editBtn = document.getElementById('edit-file-btn');
+      const editIcon = document.getElementById('edit-icon');
+
+      if (editBtn) {
+        editBtn.addEventListener('click', async function() {
+          if (editBtn.disabled) return;
+
+          const { dir, file } = getCurrentFileInfo();
+          if (!file) return;
+
+          try {
+            const response = await fetch('/edit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({ dir: dir, file: file })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              // Show brief success feedback
+              const originalIcon = editIcon.textContent;
+              editIcon.textContent = '✓';
+              setTimeout(() => {
+                editIcon.textContent = originalIcon;
+              }, 1500);
+            } else {
+              alert('Failed to open editor: ' + (result.error || 'Unknown error'));
+            }
+          } catch (err) {
+            alert('Failed to open editor: ' + err.message);
+          }
+        });
+      }
     })();
 
     // Bookmark management

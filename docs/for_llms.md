@@ -113,6 +113,27 @@ cat ~/.markymark/launcher.log
 - Mermaid.js for diagrams (client-side rendering)
 - UTF-8 encoding for international character support
 
+### Toolbar Actions
+The header toolbar includes:
+- **Copy file path** - Copies the full filesystem path of the current file to clipboard (useful for sharing with other tools/agents)
+- **Edit file** - Opens the current file in an external editor
+- **Theme toggle** - Switches between light and dark mode
+
+### Editor Configuration
+The edit button opens files in an external editor. Editor resolution order:
+1. `MARKYMARK_EDITOR_<EXT>` - Filetype-specific override (e.g., `MARKYMARK_EDITOR_ORG=emacs`)
+2. `MARKYMARK_EDITOR` - General markymark override
+3. `VISUAL` - Standard Unix visual editor
+4. `EDITOR` - Standard Unix editor
+5. Platform default: `open` (macOS), `xdg-open` (Linux), `start` (Windows)
+
+Example configuration:
+```bash
+# Use VS Code for markdown, Emacs for org files
+export MARKYMARK_EDITOR_MD="code"
+export MARKYMARK_EDITOR_ORG="emacs"
+```
+
 ### Ruby Environment Setup
 The macOS app helper script bakes in:
 - `RUBY_PATH` - Full path to Ruby executable
