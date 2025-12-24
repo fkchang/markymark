@@ -113,6 +113,41 @@ cat ~/.markymark/launcher.log
 - Mermaid.js for diagrams (client-side rendering)
 - UTF-8 encoding for international character support
 
+### Org-mode Support
+markymark also renders `.org` files with an AST-first architecture:
+
+**Modules:**
+| File | Purpose |
+|------|---------|
+| `lib/markymark/org/parser.rb` | Wraps org-ruby, builds custom AST |
+| `lib/markymark/org/renderer.rb` | Renders AST to semantic HTML |
+| `lib/markymark/org/id_generator.rb` | Generates stable, deterministic IDs |
+| `lib/markymark/org/nodes/*.rb` | AST node classes (Document, Heading, Link, etc.) |
+
+**Supported Features:**
+- Headings with TODO states, tags, and properties drawers
+- Inline formatting: bold, italic, code, verbatim, strikethrough, underline
+- Source blocks with Rouge syntax highlighting and named blocks
+- Tables with inline formatting support
+- Lists with checkboxes and progress indicators
+- Footnotes with bidirectional linking
+- Quote and example blocks
+
+**Linking System (Emacs-style):**
+- Internal links: `[[*Heading]]`, `[[#custom-id]]`
+- Cross-document: `[[file:doc.org::*Heading]]`, `[[file:doc.org::#id]]`
+- Search links: `[[file:doc.org::search term]]` (highlights first match)
+
+**Interactive Features:**
+- Section folding (click ▼ or double-click, Shift+Tab for all)
+- Floating Table of Contents with scroll tracking
+- Tag index with jump navigation
+- Fold state persisted in localStorage
+
+**Documentation:**
+- `docs/ORG_MODE_GUIDE.org` - Feature showcase and guide
+- `docs/SUPPORTED_FEATURES.org` - Complete feature reference with status
+
 ### Toolbar Actions
 The header toolbar includes:
 - **Copy file path** - Copies the full filesystem path of the current file to clipboard (useful for sharing with other tools/agents)
@@ -149,6 +184,7 @@ This is necessary because the Swift launcher doesn't inherit shell environment (
 - `puma` ~> 6.0 - Web server
 - `kramdown` ~> 2.4 - Markdown parser
 - `kramdown-parser-gfm` - GitHub Flavored Markdown
+- `org-ruby` ~> 0.9 - Org-mode parser (provides initial parsing for AST)
 - `rouge` ~> 4.0 - Syntax highlighting
 - `listen` ~> 3.8 - File watching (for future live reload)
 - `launchy` ~> 2.5 - Browser opening

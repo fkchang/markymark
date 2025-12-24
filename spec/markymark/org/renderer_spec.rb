@@ -160,7 +160,7 @@ RSpec.describe Markymark::Org::Renderer do
         expect(html).to include('<code>code</code>')
       end
 
-      it 'renders links' do
+      it 'renders external links' do
         link = Markymark::Org::Nodes::Link.new(
           url: 'https://example.com',
           description: 'Example'
@@ -170,7 +170,42 @@ RSpec.describe Markymark::Org::Renderer do
 
         html = renderer.render(doc)
 
-        expect(html).to include('<a href="https://example.com">Example</a>')
+        expect(html).to include('href="https://example.com"')
+        expect(html).to include('>Example</a>')
+        expect(html).to include('class="org-external-link"')
+      end
+
+      it 'renders internal heading links' do
+        link = Markymark::Org::Nodes::Link.new(
+          url: nil,
+          anchor_type: :heading,
+          anchor_value: 'Introduction',
+          description: 'See Intro'
+        )
+        para = Markymark::Org::Nodes::Paragraph.new(children: [link])
+        doc = Markymark::Org::Nodes::Document.new(children: [para])
+
+        html = renderer.render(doc)
+
+        expect(html).to include('href="#introduction"')
+        expect(html).to include('>See Intro</a>')
+        expect(html).to include('class="org-internal-link"')
+      end
+
+      it 'renders cross-document links with heading anchors' do
+        link = Markymark::Org::Nodes::Link.new(
+          url: 'file:other.org',
+          anchor_type: :heading,
+          anchor_value: 'Getting Started',
+          description: nil
+        )
+        para = Markymark::Org::Nodes::Paragraph.new(children: [link])
+        doc = Markymark::Org::Nodes::Document.new(children: [para])
+
+        html = renderer.render(doc)
+
+        expect(html).to include('href="other.org#getting-started"')
+        expect(html).to include('class="org-cross-doc-link"')
       end
 
       it 'escapes HTML in text' do
@@ -186,7 +221,7 @@ RSpec.describe Markymark::Org::Renderer do
     end
 
     describe 'blocks' do
-      it 'renders source blocks with language class' do
+      it 'renders source blocks with syntax highlighting' do
         src = Markymark::Org::Nodes::SrcBlock.new(
           content: 'puts "hello"',
           language: 'ruby'
@@ -196,8 +231,8 @@ RSpec.describe Markymark::Org::Renderer do
         html = renderer.render(doc)
 
         expect(html).to include('class="org-src-block"')
-        expect(html).to include('class="language-ruby"')
-        expect(html).to include('puts &quot;hello&quot;')
+        expect(html).to include('class="highlight"')  # Rouge highlighting class
+        expect(html).to include('puts')  # Content is present (may have spans for highlighting)
       end
 
       it 'renders named source blocks with caption and ID' do

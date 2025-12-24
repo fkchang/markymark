@@ -32,13 +32,16 @@ module Markymark
       end
 
       # Generate ID for footnote definitions
+      # Note: Footnote IDs are NOT made unique - multiple refs to same footnote
+      # should link to the same definition
       def footnote_id(label)
-        ensure_unique("fn-#{slugify(label)}")
+        "fn-#{slugify(label)}"
       end
 
       # Generate ID for footnote references (backref targets)
+      # Note: Not made unique - same label = same ID (for backlinks)
       def footnote_backref_id(label)
-        ensure_unique("fnref-#{slugify(label)}")
+        "fnref-#{slugify(label)}"
       end
 
       # Reset seen IDs (useful for testing or rendering multiple documents)

@@ -46,11 +46,12 @@ gem install markymark && markymark init -y
 
 - 🍎 **Native macOS integration** - Double-click `.md` files, cmd-click in iTerm, `open` command support
 - 🔄 **Smart directory switching** - Run `markymark` from any directory to switch existing server
-- 📁 **Auto-discovery** - Recursively finds all your markdown files
+- 📁 **Auto-discovery** - Recursively finds all your markdown and org files
 - 📂 **Accordion file organization** - Files grouped by directory with expand/collapse controls
 - 🔖 **Bookmarks** - Save frequently-used directories for quick access
 - 🌐 **Directory browser** - Navigate to any folder via the UI with quick shortcuts
 - 🎨 **GitHub-Flavored Markdown** - Tables, task lists, syntax highlighting
+- 🦄 **Org-mode support** - Full org-mode rendering with Emacs-style linking and navigation
 - 📊 **Mermaid diagrams** - Flowcharts, sequence diagrams render beautifully
 - 🌙 **Dark/Light theme toggle** - One-click switching, persisted in localStorage
 - 📋 **Copy file path** - One-click copy of full file path to clipboard (great for sharing with AI agents)
@@ -58,6 +59,21 @@ gem install markymark && markymark init -y
 - 🔗 **Bookmarkable URLs** - Share links to specific docs
 - 🖼️ **Image support** - Images in `assets/` folders render properly
 - 🌐 **Pumadev integration** - Optional `.test` domain support
+
+## Org-mode Support
+
+markymark renders `.org` files with features that bring Emacs power to your browser:
+
+- **Headings** with TODO states, tags, and collapsible properties drawers
+- **Section folding** - Click ▼ or double-click headings (Shift+Tab for all)
+- **Floating TOC** - Auto-generated table of contents with scroll tracking
+- **Emacs-style linking** - `[[*Heading]]`, `[[#id]]`, `[[file:doc.org::*Heading]]`
+- **Search links** - `[[file:doc.org::search term]]` highlights first match
+- **Tag navigation** - Click tags to jump to the Tag Index
+- **Progress indicators** - Checkbox lists show completion percentage
+- **Syntax highlighting** - Code blocks with Rouge highlighting
+
+See [docs/SUPPORTED_FEATURES.org](docs/SUPPORTED_FEATURES.org) for complete feature reference and [docs/ORG_MODE_GUIDE.org](docs/ORG_MODE_GUIDE.org) for examples.
 
 ## Usage
 

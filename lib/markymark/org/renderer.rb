@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'cgi'
+require 'rouge'
 require_relative 'nodes'
 require_relative 'id_generator'
 
@@ -8,13 +9,23 @@ module Markymark
   module Org
     # Renders Org AST to HTML
     class Renderer
-      def initialize(id_generator: IdGenerator.new)
+      def initialize(id_generator: IdGenerator.new, include_tag_index: true)
         @id_generator = id_generator
         @heading_stack = []
+        @tag_index = {}  # tag -> [{id:, text:, level:}]
+        @include_tag_index = include_tag_index
       end
 
       def render(document)
-        render_node(document)
+        @tag_index = {}
+        html = render_node(document)
+
+        # Append tag index if we have tags and it's enabled
+        if @include_tag_index && @tag_index.any?
+          html += render_tag_index
+        end
+
+        html
       end
 
       private
@@ -49,6 +60,14 @@ module Markymark
         tag_level = [node.level, 6].min
         tag = "h#{tag_level}"
 
+        # Collect tags for tag index
+        if node.tags && node.tags.any?
+          node.tags.each do |t|
+            @tag_index[t] ||= []
+            @tag_index[t] << { id: id, text: node.text, level: node.level, todo: node.todo_state }
+          end
+        end
+
         @heading_stack.push(node)
         children_html = render_children(node)
         @heading_stack.pop
@@ -64,7 +83,9 @@ module Markymark
         heading_content << escape_html(node.text)
 
         if node.tags && node.tags.any?
-          tag_spans = node.tags.map { |t| %(<span class="org-tag">#{escape_html(t)}</span>) }
+          tag_spans = node.tags.map do |t|
+            %(<a href="#tag-index-#{escape_html(t)}" class="org-tag">#{escape_html(t)}</a>)
+          end
           heading_content << %( <span class="org-tags">#{tag_spans.join}</span>)
         end
 
@@ -131,21 +152,104 @@ module Markymark
       end
 
       def render_link(node)
-        url = escape_html(node.url)
-        description = node.description ? escape_html(node.description) : url
-        %(<a href="#{url}">#{description}</a>)
+        if node.internal?
+          render_internal_link(node)
+        elsif node.cross_doc?
+          render_cross_doc_link(node)
+        else
+          render_external_link(node)
+        end
+      end
+
+      def render_internal_link(node)
+        # Internal link: [[*Heading]] or [[#custom-id]]
+        anchor = generate_anchor(node.anchor_type, node.anchor_value)
+        href = "##{anchor}"
+        description = node.description || node.anchor_value || anchor
+        %(<a href="#{escape_html(href)}" class="org-internal-link">#{escape_html(description)}</a>)
+      end
+
+      def render_cross_doc_link(node)
+        # Cross-document link: [[file:doc.org::*Heading]]
+        url = node.url || ''
+        url = url.sub(/^file:/, '') if url.start_with?('file:')
+
+        # Build the href with query params and optional fragment
+        href = url
+        if node.anchor_type && node.anchor_value
+          anchor = generate_anchor(node.anchor_type, node.anchor_value)
+          if node.anchor_type == :search
+            # For search, use query param
+            separator = href.include?('?') ? '&' : '?'
+            href = "#{href}#{separator}search=#{CGI.escape(node.anchor_value)}"
+          else
+            # For heading/custom_id, use fragment
+            href = "#{href}##{anchor}"
+          end
+        end
+
+        description = node.description || node.anchor_value || url
+        %(<a href="#{escape_html(href)}" class="org-cross-doc-link">#{escape_html(description)}</a>)
+      end
+
+      def render_external_link(node)
+        # External link: https://..., mailto:..., etc.
+        url = node.url || ''
+        escaped_url = escape_html(url)
+        description = node.description ? escape_html(node.description) : escaped_url
+        %(<a href="#{escaped_url}" class="org-external-link" target="_blank" rel="noopener">#{description}</a>)
+      end
+
+      def generate_anchor(anchor_type, anchor_value)
+        return '' unless anchor_value
+
+        case anchor_type
+        when :custom_id
+          # Pass through custom IDs as-is
+          anchor_value
+        when :heading
+          # Slugify heading text (same logic as IdGenerator)
+          anchor_value.to_s
+                      .downcase
+                      .gsub(/[^a-z0-9\s-]/, '')
+                      .gsub(/\s+/, '-')
+                      .gsub(/-+/, '-')
+                      .gsub(/^-|-$/, '')
+                      .slice(0, 50)
+        when :search
+          # Search doesn't use fragment, but return value for description
+          anchor_value
+        else
+          anchor_value
+        end
       end
 
       def render_src_block(node)
         id_attr = node.name ? %( id="#{@id_generator.block_id(node.name)}") : ''
         caption = node.name ? %(<figcaption>#{escape_html(node.name)}</figcaption>\n) : ''
-        lang_class = node.language ? %( class="language-#{escape_html(node.language)}") : ''
+
+        # Use Rouge for syntax highlighting if language is specified
+        highlighted = if node.language && !node.language.empty?
+                        highlight_code(node.content, node.language)
+                      else
+                        "<pre><code>#{escape_html(node.content)}</code></pre>"
+                      end
 
         <<~HTML
           <figure class="org-src-block"#{id_attr}>
-            #{caption}<pre><code#{lang_class}>#{escape_html(node.content)}</code></pre>
+            #{caption}#{highlighted}
           </figure>
         HTML
+      end
+
+      def highlight_code(code, language)
+        lexer = Rouge::Lexer.find_fancy(language) || Rouge::Lexers::PlainText.new
+        formatter = Rouge::Formatters::HTML.new
+        highlighted = formatter.format(lexer.lex(code))
+        %(<div class="highlight"><pre class="highlight"><code>#{highlighted}</code></pre></div>)
+      rescue => e
+        # Fall back to plain code if highlighting fails
+        "<pre><code class=\"language-#{escape_html(language)}\">#{escape_html(code)}</code></pre>"
       end
 
       def render_example_block(node)
@@ -191,7 +295,14 @@ module Markymark
 
       def render_table_row(node, cell_tag: 'td')
         cells = node.children.map do |cell|
-          content = cell.respond_to?(:content) ? escape_html(cell.content) : render_children(cell)
+          # Prefer rendered children (with inline formatting) over raw content
+          content = if cell.respond_to?(:children) && cell.children && cell.children.any?
+                      render_children(cell)
+                    elsif cell.respond_to?(:content)
+                      escape_html(cell.content)
+                    else
+                      ''
+                    end
           "<#{cell_tag}>#{content}</#{cell_tag}>"
         end.join
         "<tr>#{cells}</tr>\n"
@@ -254,6 +365,45 @@ module Markymark
         <<~HTML
           <!-- Unsupported org-mode construct#{type_note} -->
           <pre class="org-raw">#{escape_html(node.content)}</pre>
+        HTML
+      end
+
+      def render_tag_index
+        return '' if @tag_index.empty?
+
+        sorted_tags = @tag_index.keys.sort
+
+        tag_sections = sorted_tags.map do |tag|
+          headings = @tag_index[tag]
+          heading_links = headings.map do |h|
+            indent = '  ' * (h[:level] - 1)
+            todo_badge = if h[:todo]
+                           todo_class = "org-todo org-todo-#{h[:todo].downcase}"
+                           %(<span class="#{todo_class}" style="font-size: 0.7em;">#{escape_html(h[:todo])}</span> )
+                         else
+                           ''
+                         end
+            %(#{indent}<a href="##{h[:id]}">#{todo_badge}#{escape_html(h[:text])}</a>)
+          end.join("<br>\n")
+
+          <<~HTML
+            <div class="org-tag-section" id="tag-index-#{escape_html(tag)}">
+              <h4><span class="org-tag">#{escape_html(tag)}</span></h4>
+              <div class="org-tag-headings">
+                #{heading_links}
+              </div>
+            </div>
+          HTML
+        end.join("\n")
+
+        <<~HTML
+
+          <section class="org-tag-index">
+            <h3>Tag Index</h3>
+            <div class="org-tag-grid">
+              #{tag_sections}
+            </div>
+          </section>
         HTML
       end
 

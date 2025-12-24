@@ -850,9 +850,323 @@
       color: var(--text-secondary);
     }
 
+    /* Tag Index */
+    .org-tag-index {
+      margin-top: 3em;
+      padding-top: 2em;
+      border-top: 2px solid var(--border-highlight);
+    }
+
+    .org-tag-index > h3 {
+      color: var(--text-primary);
+      margin-bottom: 1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .org-tag-index > h3::before {
+      content: '';
+      font-size: 1.2em;
+    }
+
+    .org-tag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1em;
+    }
+
+    .org-tag-section {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1em;
+      border: 1px solid var(--border-color);
+    }
+
+    .org-tag-section h4 {
+      margin: 0 0 0.75em 0;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .org-tag-headings {
+      font-size: 0.9em;
+      line-height: 1.8;
+    }
+
+    .org-tag-headings a {
+      color: var(--text-link);
+      text-decoration: none;
+    }
+
+    .org-tag-headings a:hover {
+      text-decoration: underline;
+    }
+
+    /* Make tags in headings clickable */
+    .org-tags a.org-tag {
+      color: white !important;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .org-tags a.org-tag:hover {
+      color: white !important;
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      text-decoration: none;
+    }
+
     /* Org list checkbox styling */
     .markdown-body li input[type="checkbox"] {
       margin-right: 0.5em;
+    }
+
+    /* Org-mode section folding */
+    .org-fold-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      margin-right: 6px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .org-fold-indicator:hover {
+      background: var(--bg-hover);
+      color: var(--text-link);
+      border-color: var(--text-link);
+      transform: scale(1.1);
+    }
+
+    .org-section-content {
+      transition: opacity 0.2s ease, max-height 0.3s ease;
+    }
+
+    .org-collapsed .org-section-content {
+      display: none;
+    }
+
+    .org-collapsed > h1,
+    .org-collapsed > h2,
+    .org-collapsed > h3,
+    .org-collapsed > h4,
+    .org-collapsed > h5,
+    .org-collapsed > h6 {
+      opacity: 0.7;
+    }
+
+    .org-collapsed > h1::after,
+    .org-collapsed > h2::after,
+    .org-collapsed > h3::after,
+    .org-collapsed > h4::after,
+    .org-collapsed > h5::after,
+    .org-collapsed > h6::after {
+      content: ' ...';
+      color: var(--text-secondary);
+      font-weight: normal;
+      font-style: italic;
+    }
+
+    /* Floating Table of Contents */
+    .org-toc {
+      position: fixed;
+      right: 32px;
+      top: 80px;
+      width: 220px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 0.85em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 100;
+      transition: opacity 0.2s ease;
+    }
+
+    .org-toc.hidden {
+      display: none;
+    }
+
+    .org-toc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .org-toc-header h4 {
+      margin: 0;
+      font-size: 0.95em;
+      color: var(--text-primary);
+    }
+
+    .org-toc-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .org-toc-toggle:hover {
+      background: var(--bg-hover);
+    }
+
+    .org-toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .org-toc-list li {
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+
+    .org-toc-list a {
+      color: var(--text-link);
+      text-decoration: none;
+      display: block;
+      padding: 2px 0;
+      transition: color 0.1s ease;
+    }
+
+    .org-toc-list a:hover {
+      color: var(--text-link-hover);
+    }
+
+    .org-toc-list a.active {
+      font-weight: 600;
+      color: var(--border-highlight);
+    }
+
+    .org-toc-list .toc-h2 { padding-left: 0; }
+    .org-toc-list .toc-h3 { padding-left: 12px; font-size: 0.95em; }
+    .org-toc-list .toc-h4 { padding-left: 24px; font-size: 0.9em; color: var(--text-secondary); }
+    .org-toc-list .toc-h5 { padding-left: 36px; font-size: 0.85em; color: var(--text-secondary); }
+
+    /* Floating TOC toggle button (when TOC is hidden) */
+    .org-toc-show-btn {
+      position: fixed;
+      right: 32px;
+      top: 80px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-link);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 100;
+      display: none;
+    }
+
+    .org-toc-show-btn.visible {
+      display: block;
+    }
+
+    .org-toc-show-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    /* Progress indicator for checkbox lists */
+    .org-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 12px;
+      font-size: 0.75em;
+      color: var(--text-secondary);
+    }
+
+    .org-progress-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .org-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #51cf66, #40c057);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .org-progress-text {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-weight: 600;
+    }
+
+    /* Responsive: hide TOC on smaller screens */
+    @media (max-width: 1400px) {
+      .org-toc {
+        display: none;
+      }
+      .org-toc-show-btn {
+        display: none !important;
+      }
+    }
+
+    /* Search highlight for org-mode search links */
+    .org-search-highlight {
+      background: linear-gradient(135deg, #fef08a, #fde047);
+      padding: 2px 4px;
+      border-radius: 3px;
+      box-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+      animation: org-highlight-pulse 2s ease-out;
+    }
+
+    @keyframes org-highlight-pulse {
+      0% {
+        box-shadow: 0 0 20px rgba(250, 204, 21, 0.9);
+        background: linear-gradient(135deg, #fef08a, #facc15);
+      }
+      100% {
+        box-shadow: 0 0 4px rgba(250, 204, 21, 0.3);
+        background: linear-gradient(135deg, #fef9c3, #fef08a);
+      }
+    }
+
+    [data-theme="dark"] .org-search-highlight {
+      background: linear-gradient(135deg, #854d0e, #a16207);
+      color: #fef9c3;
+      box-shadow: 0 0 8px rgba(161, 98, 7, 0.6);
+    }
+
+    /* Link type styling */
+    .org-internal-link {
+      border-bottom: 1px dashed var(--text-link);
+    }
+
+    .org-cross-doc-link::after {
+      content: ' ↗';
+      font-size: 0.8em;
+      opacity: 0.6;
+    }
+
+    .org-external-link::after {
+      content: ' ↗';
+      font-size: 0.8em;
+      opacity: 0.6;
     }
   </style>
 </head>
@@ -1178,6 +1492,244 @@
         // If no state in localStorage, use default from template (root expanded, others collapsed)
       });
     });
+
+    // Org-mode section folding (like Emacs TAB cycling)
+    (function() {
+      document.querySelectorAll('.org-heading > h1, .org-heading > h2, .org-heading > h3, .org-heading > h4, .org-heading > h5, .org-heading > h6').forEach(function(heading) {
+        // Add fold indicator
+        const foldIndicator = document.createElement('span');
+        foldIndicator.className = 'org-fold-indicator';
+        foldIndicator.textContent = '▼';
+        foldIndicator.title = 'Click to fold/unfold (or double-click heading)';
+        heading.insertBefore(foldIndicator, heading.firstChild);
+
+        // Get the section and its content (everything after the heading and properties)
+        const section = heading.parentElement;
+        const content = Array.from(section.children).filter(el =>
+          el !== heading &&
+          !el.classList.contains('org-properties')
+        );
+
+        // Create wrapper for foldable content
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'org-section-content';
+        content.forEach(el => contentWrapper.appendChild(el));
+        section.appendChild(contentWrapper);
+
+        // Toggle function
+        function toggleFold() {
+          const isCollapsed = section.classList.toggle('org-collapsed');
+          foldIndicator.textContent = isCollapsed ? '►' : '▼';
+
+          // Save state
+          const headingId = heading.id;
+          if (headingId) {
+            localStorage.setItem('org_fold_' + headingId, isCollapsed ? 'collapsed' : 'expanded');
+          }
+        }
+
+        // Click on indicator to fold
+        foldIndicator.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggleFold();
+        });
+
+        // Double-click on heading to fold
+        heading.addEventListener('dblclick', function(e) {
+          if (e.target === foldIndicator) return;
+          toggleFold();
+        });
+
+        // Restore state from localStorage
+        const headingId = heading.id;
+        if (headingId) {
+          const state = localStorage.getItem('org_fold_' + headingId);
+          if (state === 'collapsed') {
+            section.classList.add('org-collapsed');
+            foldIndicator.textContent = '►';
+          }
+        }
+      });
+
+      // Global fold/unfold all (Shift+Tab like Emacs)
+      document.addEventListener('keydown', function(e) {
+        if (e.shiftKey && e.key === 'Tab' && document.activeElement.tagName !== 'INPUT') {
+          e.preventDefault();
+          const sections = document.querySelectorAll('.org-heading');
+          const allCollapsed = Array.from(sections).every(s => s.classList.contains('org-collapsed'));
+
+          sections.forEach(function(section) {
+            const indicator = section.querySelector('.org-fold-indicator');
+            if (allCollapsed) {
+              section.classList.remove('org-collapsed');
+              if (indicator) indicator.textContent = '▼';
+            } else {
+              section.classList.add('org-collapsed');
+              if (indicator) indicator.textContent = '►';
+            }
+          });
+        }
+      });
+    })();
+
+    // Floating Table of Contents for org-mode documents
+    (function() {
+      const headings = document.querySelectorAll('.org-heading > h1[id], .org-heading > h2[id], .org-heading > h3[id], .org-heading > h4[id]');
+      if (headings.length < 3) return; // Only show TOC if there are enough headings
+
+      // Create TOC container
+      const toc = document.createElement('nav');
+      toc.className = 'org-toc';
+      toc.innerHTML = '<div class="org-toc-header"><h4>Contents</h4><button class="org-toc-toggle" title="Hide TOC">×</button></div>';
+
+      const tocList = document.createElement('ul');
+      tocList.className = 'org-toc-list';
+
+      headings.forEach(function(heading) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#' + heading.id;
+        // Get text without the fold indicator
+        let text = heading.textContent.replace(/^[▼►]\s*/, '').trim();
+        // Truncate long headings
+        if (text.length > 30) text = text.substring(0, 30) + '...';
+        a.textContent = text;
+        a.className = 'toc-' + heading.tagName.toLowerCase();
+        a.dataset.headingId = heading.id;
+        li.appendChild(a);
+        tocList.appendChild(li);
+      });
+
+      toc.appendChild(tocList);
+
+      // Create show button (visible when TOC is hidden)
+      const showBtn = document.createElement('button');
+      showBtn.className = 'org-toc-show-btn';
+      showBtn.textContent = '☰ TOC';
+      showBtn.title = 'Show Table of Contents';
+
+      // Add to document
+      document.body.appendChild(toc);
+      document.body.appendChild(showBtn);
+
+      // Toggle TOC visibility
+      const toggleBtn = toc.querySelector('.org-toc-toggle');
+      toggleBtn.addEventListener('click', function() {
+        toc.classList.add('hidden');
+        showBtn.classList.add('visible');
+        localStorage.setItem('org_toc_hidden', 'true');
+      });
+
+      showBtn.addEventListener('click', function() {
+        toc.classList.remove('hidden');
+        showBtn.classList.remove('visible');
+        localStorage.setItem('org_toc_hidden', 'false');
+      });
+
+      // Restore hidden state
+      if (localStorage.getItem('org_toc_hidden') === 'true') {
+        toc.classList.add('hidden');
+        showBtn.classList.add('visible');
+      }
+
+      // Highlight current section on scroll
+      const content = document.querySelector('.content');
+      if (content) {
+        let ticking = false;
+        content.addEventListener('scroll', function() {
+          if (!ticking) {
+            window.requestAnimationFrame(function() {
+              const scrollTop = content.scrollTop;
+              let current = '';
+
+              headings.forEach(function(heading) {
+                const section = heading.closest('.org-heading');
+                if (section && section.offsetTop <= scrollTop + 100) {
+                  current = heading.id;
+                }
+              });
+
+              tocList.querySelectorAll('a').forEach(function(a) {
+                a.classList.toggle('active', a.dataset.headingId === current);
+              });
+
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
+      }
+    })();
+
+    // Progress indicators for checkbox lists
+    (function() {
+      document.querySelectorAll('.markdown-body ul, .markdown-body ol').forEach(function(list) {
+        const checkboxes = list.querySelectorAll(':scope > li > input[type="checkbox"]');
+        if (checkboxes.length < 2) return; // Only show progress for lists with multiple checkboxes
+
+        const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const total = checkboxes.length;
+        const percent = Math.round((checked / total) * 100);
+
+        // Create progress indicator
+        const progress = document.createElement('span');
+        progress.className = 'org-progress';
+        progress.innerHTML = `
+          <span class="org-progress-bar">
+            <span class="org-progress-fill" style="width: ${percent}%"></span>
+          </span>
+          <span class="org-progress-text">${checked}/${total}</span>
+        `;
+
+        // Insert before the list
+        list.parentNode.insertBefore(progress, list);
+      });
+    })();
+
+    // Search highlight for org-mode search links (?search=term)
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const searchTerm = params.get('search');
+      if (!searchTerm) return;
+
+      const content = document.querySelector('.markdown-body');
+      if (!content) return;
+
+      // Find first occurrence of search term in text content
+      const walker = document.createTreeWalker(
+        content,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+
+      let node;
+      while (node = walker.nextNode()) {
+        const index = node.textContent.toLowerCase().indexOf(searchTerm.toLowerCase());
+        if (index !== -1) {
+          // Found the term - wrap it in highlight span
+          const range = document.createRange();
+          range.setStart(node, index);
+          range.setEnd(node, index + searchTerm.length);
+
+          const highlight = document.createElement('mark');
+          highlight.className = 'org-search-highlight';
+          range.surroundContents(highlight);
+
+          // Scroll to the highlight
+          highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          // Remove highlight after 5 seconds
+          setTimeout(function() {
+            highlight.classList.remove('org-search-highlight');
+            highlight.style.background = 'transparent';
+            highlight.style.boxShadow = 'none';
+          }, 5000);
+
+          break; // Only highlight first occurrence
+        }
+      }
+    })();
   </script>
 </body>
 </html>

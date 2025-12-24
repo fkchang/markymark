@@ -169,7 +169,10 @@ module Markymark
             i += 1
             next
 
-          when :comment, :blank, :property_drawer_begin, :property_drawer_end, :property_drawer, :heading1, :heading2, :heading3, :heading4, :heading5, :heading6
+          when :comment, :blank,
+               :property_drawer_begin, :property_drawer_end, :property_drawer,
+               :property_drawer_begin_block, :property_drawer_end_block, :property_drawer_item,
+               :heading1, :heading2, :heading3, :heading4, :heading5, :heading6
             # Skip comments, blank lines, property drawers, and heading refs in body (handled separately)
             i += 1
             next
@@ -440,10 +443,11 @@ module Markymark
           # Try to match inline elements in order of precedence
 
           # Links: [[url][description]] or [[url]]
+          # Supports: [[*heading]], [[#id]], [[file:doc.org::*heading]], etc.
           if remaining =~ /\A\[\[([^\]]+)\](?:\[([^\]]+)\])?\]/
-            url = $1
+            raw_target = $1
             description = $2
-            nodes << Nodes::Link.new(url: url, description: description)
+            nodes << parse_org_link(raw_target, description)
             remaining = $'
             next
           end
@@ -516,6 +520,54 @@ module Markymark
         end
 
         nodes
+      end
+
+      # Parse org-mode link target into structured Link node
+      # Handles: [[*heading]], [[#id]], [[file:doc.org::*heading]], [[file:doc.org::search]]
+      def parse_org_link(raw_target, description)
+        url = nil
+        anchor_type = nil
+        anchor_value = nil
+
+        # Check for internal heading link: [[*Heading Text]]
+        if raw_target.start_with?('*')
+          anchor_type = :heading
+          anchor_value = raw_target[1..].strip
+          return Nodes::Link.new(url: url, description: description,
+                                 anchor_type: anchor_type, anchor_value: anchor_value)
+        end
+
+        # Check for internal custom ID link: [[#custom-id]]
+        if raw_target.start_with?('#')
+          anchor_type = :custom_id
+          anchor_value = raw_target[1..].strip
+          return Nodes::Link.new(url: url, description: description,
+                                 anchor_type: anchor_type, anchor_value: anchor_value)
+        end
+
+        # Check for cross-document link with anchor: [[file:doc.org::*heading]] or [[doc.org::*heading]]
+        if raw_target.include?('::')
+          url_part, anchor_part = raw_target.split('::', 2)
+          url = url_part
+
+          if anchor_part.start_with?('*')
+            anchor_type = :heading
+            anchor_value = anchor_part[1..].strip
+          elsif anchor_part.start_with?('#')
+            anchor_type = :custom_id
+            anchor_value = anchor_part[1..].strip
+          else
+            # Plain text search
+            anchor_type = :search
+            anchor_value = anchor_part.strip
+          end
+        else
+          # Simple link without anchor
+          url = raw_target
+        end
+
+        Nodes::Link.new(url: url, description: description,
+                        anchor_type: anchor_type, anchor_value: anchor_value)
       end
     end
   end

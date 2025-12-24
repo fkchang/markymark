@@ -1,0 +1,290 @@
+#+TITLE: MarkyMark Org-mode Supported Features
+#+AUTHOR: Forrest Chang
+#+DESCRIPTION: Reference of supported org-mode features with status and examples
+
+* Overview
+:PROPERTIES:
+:CUSTOM_ID: overview
+:END:
+
+This document lists all org-mode features supported by MarkyMark, organized by category. Each feature includes its support status and links to examples.
+
+*Quick Navigation:*
+- [[#document-structure][Document Structure]]
+- [[#headings][Headings & Sections]]
+- [[#inline-formatting][Inline Formatting]]
+- [[#links][Links & Navigation]]
+- [[#blocks][Blocks]]
+- [[#lists][Lists]]
+- [[#tables][Tables]]
+- [[#interactive][Interactive Features]]
+- [[#roadmap][Roadmap]]
+
+See [[file:ORG_MODE_GUIDE.org][ORG_MODE_GUIDE.org]] for detailed examples and comparisons.
+
+* DONE Document Structure :core:
+:PROPERTIES:
+:CUSTOM_ID: document-structure
+:END:
+
+| Feature | Syntax | Status |
+|---------+--------+--------|
+| Document title | =#+TITLE:= | Supported |
+| Author | =#+AUTHOR:= | Supported |
+| Description | =#+DESCRIPTION:= | Supported |
+| Other keywords | =#+KEYWORD:= | Parsed, not rendered |
+
+* DONE Headings & Sections :core:
+:PROPERTIES:
+:CUSTOM_ID: headings
+:END:
+
+| Feature | Syntax | Status |
+|---------+--------+--------|
+| Heading levels 1-6 | =* Heading=, =** Heading= | Supported |
+| TODO states | =* TODO Task= | Supported |
+| DONE states | =* DONE Task= | Supported |
+| Tags | =* Heading :tag1:tag2:= | Supported |
+| CUSTOM_ID | =:CUSTOM_ID: my-id= | Supported |
+| Properties drawer | =:PROPERTIES:= block | Supported |
+| Section folding | Click ▼ or double-click | Supported |
+| Stable IDs | Auto-generated from text | Supported |
+
+** Heading Examples
+
+*** TODO Example TODO heading :example:
+This is a TODO item with a tag.
+
+*** DONE Example DONE heading :example:complete:
+:PROPERTIES:
+:COMPLETED: 2024-12-23
+:END:
+This is a completed item with properties.
+
+* DONE Inline Formatting :core:
+:PROPERTIES:
+:CUSTOM_ID: inline-formatting
+:END:
+
+| Markup | Syntax | Renders As |
+|--------+--------+------------|
+| Bold | =*bold*= | *bold* |
+| Italic | =/italic/= | /italic/ |
+| Code | =~code~= | ~code~ |
+| Verbatim | ==verbatim== | =verbatim= |
+| Strikethrough | =+strike+= | +strikethrough+ |
+| Underline | =_underline_= | _underline_ |
+
+* DONE Links & Navigation :core:navigation:
+:PROPERTIES:
+:CUSTOM_ID: links
+:END:
+
+** Supported Link Types
+
+| Type | Syntax | Example |
+|------+--------+---------|
+| External URL | =[[https://...]]= | [[https://github.com][GitHub]] |
+| Internal heading | =[[*Heading]]=  | [[*Overview]] |
+| Internal CUSTOM_ID | =[[#id]]= | [[#headings]] |
+| Cross-doc | =[[file:doc.org]]= | [[file:ORG_MODE_GUIDE.org]] |
+| Cross-doc + heading | =[[file:doc.org::*Heading]]= | [[file:ORG_MODE_GUIDE.org::*Introduction to MarkyMark][Guide: Introduction]] |
+| Cross-doc + ID | =[[file:doc.org::#id]]= | [[file:ORG_MODE_GUIDE.org::#features][Guide: Features]] |
+| Cross-doc + search | =[[file:doc.org::text]]= | [[file:ORG_MODE_GUIDE.org::AST-first][Search: AST-first]] |
+| With description | =[[url][desc]]= | All above support descriptions |
+
+** Link Visual Indicators
+
+- *Internal links*: dashed underline
+- *Cross-doc links*: arrow indicator (↗)
+- *External links*: arrow indicator (↗), opens in new tab
+
+** Navigation Features
+
+| Feature | How to Use |
+|---------+------------|
+| Jump to heading | Click internal link or TOC entry |
+| Cross-doc navigation | Click file link - jumps to anchor if specified |
+| Search highlight | Links with =::search= highlight first match |
+| Tag index | Click tags to jump to Tag Index section |
+| Back navigation | Browser back button |
+
+* DONE Blocks :core:
+:PROPERTIES:
+:CUSTOM_ID: blocks
+:END:
+
+** Source Blocks
+
+#+NAME: example-src-block
+#+BEGIN_SRC ruby
+# Named source blocks get captions and IDs
+def greet(name)
+  "Hello, #{name}!"
+end
+#+END_SRC
+
+| Feature | Syntax | Status |
+|---------+--------+--------|
+| Basic src block | =#+BEGIN_SRC lang= | Supported |
+| Named blocks | =#+NAME: name= | Supported |
+| Syntax highlighting | Via Rouge | Supported |
+| Line numbers | Not yet | Planned |
+
+** Other Block Types
+
+#+BEGIN_QUOTE
+Quote blocks render as styled blockquotes.
+#+END_QUOTE
+
+#+BEGIN_EXAMPLE
+Example blocks preserve
+  exact whitespace
+    and indentation.
+#+END_EXAMPLE
+
+| Block Type | Status |
+|------------+--------|
+| =#+BEGIN_QUOTE= | Supported |
+| =#+BEGIN_EXAMPLE= | Supported |
+| =#+BEGIN_CENTER= | Not supported |
+| =#+BEGIN_VERSE= | Not supported |
+
+* DONE Lists :core:
+:PROPERTIES:
+:CUSTOM_ID: lists
+:END:
+
+** Unordered Lists
+
+- Item one
+- Item two
+  - Nested item
+- Item three
+
+** Ordered Lists
+
+1. First item
+2. Second item
+3. Third item
+
+** Checkbox Lists
+
+- [X] Completed task
+- [ ] Pending task
+- [-] Partially complete
+
+| Feature | Status |
+|---------+--------|
+| Unordered lists | Supported |
+| Ordered lists | Supported |
+| Checkboxes | Supported |
+| Progress indicators | Supported (auto-calculated) |
+| Nested lists | Basic support |
+| Definition lists | Not supported |
+
+* DONE Tables :core:
+:PROPERTIES:
+:CUSTOM_ID: tables
+:END:
+
+| Feature | Status | Notes |
+|---------+--------+-------|
+| Basic tables | Supported | |
+| Header rows | Supported | First row before =---= |
+| Column alignment | Partial | Left-align only |
+| Formulas | Not supported | Reader-only |
+| Sorting | Not supported | Reader-only |
+
+* DONE Interactive Features :interactive:
+:PROPERTIES:
+:CUSTOM_ID: interactive
+:END:
+
+| Feature | Trigger | Status |
+|---------+---------+--------|
+| Section folding | Click ▼ or double-click heading | Supported |
+| Fold all | Shift+Tab | Supported |
+| Floating TOC | Auto-generated for 3+ headings | Supported |
+| TOC scroll tracking | Highlights current section | Supported |
+| Progress indicators | Auto on checkbox lists | Supported |
+| Tag index | Auto-generated if tags present | Supported |
+| Tag jumping | Click tag → jump to index | Supported |
+| Search highlighting | =?search=term= URL param | Supported |
+| Fold state persistence | localStorage | Supported |
+| TOC state persistence | localStorage | Supported |
+
+* Footnotes :core:
+:PROPERTIES:
+:CUSTOM_ID: footnotes
+:END:
+
+Footnotes use the =[fn:label]= syntax[fn:example].
+
+| Feature | Status |
+|---------+--------|
+| Footnote references | Supported |
+| Footnote definitions | Supported |
+| Bidirectional links | Supported |
+| Inline footnotes | Not supported |
+
+[fn:example] This is an example footnote with a backlink.
+
+* TODO Roadmap :planning:
+:PROPERTIES:
+:CUSTOM_ID: roadmap
+:END:
+
+** TODO Custom TODO States :enhancement:
+:PROPERTIES:
+:PRIORITY: B
+:END:
+
+Support =#+TODO:= for custom workflow states (WAITING, REVIEW, BLOCKED).
+
+** TODO Additional Drawers :enhancement:
+:PROPERTIES:
+:PRIORITY: C
+:END:
+
+Support LOGBOOK and custom named drawers.
+
+** TODO Sparse Trees :enhancement:
+:PROPERTIES:
+:PRIORITY: B
+:END:
+
+Filter view to show only headings matching criteria (TODO state, tag, text).
+
+** TODO Broken Link Detection :enhancement:
+:PROPERTIES:
+:PRIORITY: C
+:END:
+
+Visual indicator for links that don't resolve.
+
+** TODO Line Numbers in Source Blocks :enhancement:
+:PROPERTIES:
+:PRIORITY: C
+:END:
+
+=#+BEGIN_SRC ruby -n= for line numbers.
+
+* Not Planned :scope:
+:PROPERTIES:
+:CUSTOM_ID: not-planned
+:END:
+
+These org-mode features are outside MarkyMark's scope as a *reader-only* tool:
+
+- Babel code execution
+- Agenda views (requires file aggregation)
+- Clock/time tracking (requires state)
+- Capture templates
+- Archiving
+- Export backends
+- Org-roam/linking database
+- Property inheritance
+- Column view
+
+MarkyMark focuses on *rendering documentation*, not *editing workflows*.

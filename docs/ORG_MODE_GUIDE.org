@@ -17,6 +17,8 @@ MarkyMark is a lightweight documentation viewer designed for developers who work
 
 And now, *org-mode support* - bringing the power of Emacs' org-mode to your browser.
 
+For a complete reference of supported features, see [[file:SUPPORTED_FEATURES.org][SUPPORTED_FEATURES.org]].
+
 ** Why Another Documentation Viewer?
 :PROPERTIES:
 :CUSTOM_ID: why-markymark
@@ -42,6 +44,90 @@ Org-mode wasn't designed as "just another markup language." It was designed as a
 4. *Native task tracking* - TODO/DONE built into headings
 
 This guide demonstrates these features /by using them/.
+
+* Interactive Features :demo:interactive:
+:PROPERTIES:
+:CUSTOM_ID: interactive-features
+:END:
+
+MarkyMark brings Emacs-like interactivity to org-mode in the browser.
+
+** Collapsible Sections (Folding) :folding:
+:PROPERTIES:
+:CUSTOM_ID: folding
+:END:
+
+Every section can be folded/unfolded just like in Emacs:
+
+- *Click the ▼/► indicator* next to any heading to toggle
+- *Double-click a heading* to fold/unfold
+- *Shift+Tab* anywhere to fold/unfold ALL sections
+- Fold state is *persisted* in localStorage
+
+Try it now - click the fold indicator on any heading above!
+
+** Floating Table of Contents :navigation:
+:PROPERTIES:
+:CUSTOM_ID: toc
+:END:
+
+Look to the right side of your screen. The floating TOC:
+
+- Shows all headings up to level 4
+- *Highlights the current section* as you scroll
+- Can be *dismissed* with the × button (shows again via TOC button)
+- State persists across page loads
+
+This makes navigating long org documents effortless.
+
+** Progress Indicators :progress:
+:PROPERTIES:
+:CUSTOM_ID: progress
+:END:
+
+Checkbox lists automatically show completion progress:
+
+*Sample Task List:*
+- [X] Design the feature
+- [X] Implement the CSS
+- [X] Add JavaScript handlers
+- [ ] Write documentation
+- [ ] Add tests
+
+The progress bar above shows 3/5 (60%) complete. This is calculated automatically from checkbox state.
+
+** Keyboard Shortcuts :shortcuts:
+:PROPERTIES:
+:CUSTOM_ID: shortcuts
+:END:
+
+| Key           | Action                    |
+|---------------+---------------------------|
+| Shift+Tab     | Fold/unfold all sections  |
+| Double-click  | Toggle section fold       |
+
+** Org-mode Linking :links:
+:PROPERTIES:
+:CUSTOM_ID: linking
+:END:
+
+Org-mode's linking system is one of its superpowers. MarkyMark supports:
+
+*Internal Links* (same document):
+- [[*Introduction to MarkyMark]] - Link to heading by text
+- [[#features]] - Link to heading by CUSTOM_ID
+- [[#interactive-features][Jump to Interactive Features]] - With description
+
+*Cross-Document Links*:
+- [[file:SUPPORTED_FEATURES.org]] - Open another org file
+- [[file:SUPPORTED_FEATURES.org::*Roadmap][See the Roadmap]] - Jump to specific heading
+- [[file:SUPPORTED_FEATURES.org::#links][Feature: Links]] - Jump to CUSTOM_ID
+- [[file:SUPPORTED_FEATURES.org::Sparse Trees]] - Search for text (highlights match)
+
+*External Links*:
+- [[https://orgmode.org][Org-mode Official Site]] - Opens in new tab
+
+Try clicking these links to see the navigation in action!
 
 * Feature Showcase :demo:
 :PROPERTIES:
