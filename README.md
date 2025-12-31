@@ -56,6 +56,7 @@ gem install markymark && markymark init -y
 - 🌙 **Dark/Light theme toggle** - One-click switching, persisted in localStorage
 - 📋 **Copy file path** - One-click copy of full file path to clipboard (great for sharing with AI agents)
 - ✏️ **Edit in external editor** - Open current file in your preferred editor
+- 🎬 **Org-reveal presentations** - One-click export and launch for org-reveal slide decks
 - 🔗 **Bookmarkable URLs** - Share links to specific docs
 - 🖼️ **Image support** - Images in `assets/` folders render properly
 - 🌐 **Pumadev integration** - Optional `.test` domain support
@@ -72,6 +73,15 @@ markymark renders `.org` files with features that bring Emacs power to your brow
 - **Tag navigation** - Click tags to jump to the Tag Index
 - **Progress indicators** - Checkbox lists show completion percentage
 - **Syntax highlighting** - Code blocks with Rouge highlighting
+- **Org-reveal presentations** - Files with `#+REVEAL_` headers show a 🎬 button to export and launch presentations
+
+### Org-reveal Integration
+
+For `.org` files that use org-reveal (have `#+REVEAL_ROOT:`, `#+REVEAL_THEME:`, etc.), a presentation button appears in the toolbar. Requirements:
+- Emacs with server running (`M-x server-start`)
+- `ox-reveal` package installed
+
+Click the 🎬 button to export via `emacsclient` and open the presentation in your browser.
 
 See [docs/SUPPORTED_FEATURES.org](docs/SUPPORTED_FEATURES.org) for complete feature reference and [docs/ORG_MODE_GUIDE.org](docs/ORG_MODE_GUIDE.org) for examples.
 

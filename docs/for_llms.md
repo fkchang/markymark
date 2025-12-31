@@ -152,7 +152,20 @@ markymark also renders `.org` files with an AST-first architecture:
 The header toolbar includes:
 - **Copy file path** - Copies the full filesystem path of the current file to clipboard (useful for sharing with other tools/agents)
 - **Edit file** - Opens the current file in an external editor
+- **Present (org-reveal)** - For `.org` files with `#+REVEAL_` headers, exports and opens presentation via `emacsclient`
 - **Theme toggle** - Switches between light and dark mode
+
+### Org-reveal Integration
+The present button (🎬) appears only for org files containing org-reveal headers (`#+REVEAL_ROOT:`, `#+REVEAL_THEME:`, etc.).
+
+**How it works:**
+1. Detection: `ServerSimple.org_reveal_file?` scans first 50 lines for `#+REVEAL_` pattern
+2. Export: `POST /present` runs `emacsclient -e '(progn (find-file "...") (org-reveal-export-to-html))'`
+3. Opens: Exported HTML opened in default browser
+
+**Requirements:**
+- Emacs server running (`M-x server-start`)
+- `ox-reveal` package installed in Emacs
 
 ### Editor Configuration
 The edit button opens files in an external editor. Editor resolution order:

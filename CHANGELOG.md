@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Org-reveal presentation button** - Toolbar button (🎬) appears for `.org` files with `#+REVEAL_` headers
+  - Uses `emacsclient` to export via running Emacs (requires Emacs server and ox-reveal)
+  - Opens exported HTML presentation in default browser
+  - Tooltip explains requirements on hover
+
 ## [0.1.2] - 2025-12-23
 
 ### Added
