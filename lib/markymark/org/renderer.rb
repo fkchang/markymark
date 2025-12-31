@@ -18,6 +18,15 @@ module Markymark
 
       def render(document)
         @tag_index = {}
+        @heading_ids = {}  # heading text (lowercased) -> actual ID
+        @current_document = document  # Store for state classification
+
+        # First pass: collect heading IDs for internal link resolution
+        collect_heading_ids(document)
+
+        # Reset ID generator so render pass generates same IDs
+        @id_generator.reset!
+
         html = render_node(document)
 
         # Append tag index if we have tags and it's enabled
@@ -29,6 +38,24 @@ module Markymark
       end
 
       private
+
+      # Collect heading text -> ID mappings for internal link resolution
+      def collect_heading_ids(node, ancestors: [])
+        return unless node.respond_to?(:children) && node.children
+
+        node.children.each do |child|
+          if child.type == :heading && child.respond_to?(:text)
+            # Generate the ID the same way render_heading does
+            id = @id_generator.heading_id(child, ancestors: ancestors)
+            # Store mapping from heading text (lowercased) to actual ID
+            @heading_ids[child.text.downcase.strip] = id
+            # Recurse into heading's children
+            collect_heading_ids(child, ancestors: ancestors + [child])
+          else
+            collect_heading_ids(child, ancestors: ancestors)
+          end
+        end
+      end
 
       def render_node(node)
         method_name = "render_#{node.type}"
@@ -76,7 +103,7 @@ module Markymark
         heading_content = []
 
         if node.todo_state && !node.todo_state.empty?
-          todo_class = "org-todo org-todo-#{node.todo_state.downcase}"
+          todo_class = todo_state_class(node.todo_state)
           heading_content << %(<span class="#{todo_class}">#{escape_html(node.todo_state)}</span> )
         end
 
@@ -163,7 +190,13 @@ module Markymark
 
       def render_internal_link(node)
         # Internal link: [[*Heading]] or [[#custom-id]]
-        anchor = generate_anchor(node.anchor_type, node.anchor_value)
+        anchor = if node.anchor_type == :heading && node.anchor_value
+                   # Look up actual heading ID from collected mappings
+                   @heading_ids[node.anchor_value.downcase.strip] ||
+                     generate_anchor(node.anchor_type, node.anchor_value)
+                 else
+                   generate_anchor(node.anchor_type, node.anchor_value)
+                 end
         href = "##{anchor}"
         description = node.description || node.anchor_value || anchor
         %(<a href="#{escape_html(href)}" class="org-internal-link">#{escape_html(description)}</a>)
@@ -174,14 +207,15 @@ module Markymark
         url = node.url || ''
         url = url.sub(/^file:/, '') if url.start_with?('file:')
 
-        # Build the href with query params and optional fragment
+        # Use relative path - server handles routing via click interception
+        # This keeps links simple and lets the existing navigation work
         href = url
+
         if node.anchor_type && node.anchor_value
           anchor = generate_anchor(node.anchor_type, node.anchor_value)
           if node.anchor_type == :search
-            # For search, use query param
-            separator = href.include?('?') ? '&' : '?'
-            href = "#{href}#{separator}search=#{CGI.escape(node.anchor_value)}"
+            # For search, add query param (will be handled by JS)
+            href = "#{href}?search=#{CGI.escape(node.anchor_value)}"
           else
             # For heading/custom_id, use fragment
             href = "#{href}##{anchor}"
@@ -405,6 +439,35 @@ module Markymark
             </div>
           </section>
         HTML
+      end
+
+      # Determine CSS class for a TODO state based on document's workflow configuration
+      # Returns classes like "org-todo org-todo-active org-todo-waiting"
+      def todo_state_class(state)
+        return 'org-todo' if state.nil? || state.empty?
+
+        state_lower = state.downcase
+        state_upper = state.upcase
+
+        # Determine if this is an active or done state
+        state_type = if @current_document&.done_state?(state_upper)
+                       'done'
+                     elsif @current_document&.active_state?(state_upper)
+                       'active'
+                     else
+                       # Unknown state - guess based on common patterns
+                       %w[DONE CANCELLED CANCELED CLOSED ARCHIVED].include?(state_upper) ? 'done' : 'active'
+                     end
+
+        # Assign a color index for active states (for variety)
+        color_index = if state_type == 'active' && @current_document
+                        idx = @current_document.todo_states.index(state_upper) || 0
+                        idx % 5  # Cycle through 5 colors
+                      else
+                        0
+                      end
+
+        "org-todo org-todo-#{state_type} org-todo-#{state_type}-#{color_index} org-todo-#{state_lower}"
       end
 
       def escape_html(text)

@@ -1,6 +1,7 @@
 #+TITLE: MarkyMark Org-mode Support
 #+AUTHOR: Forrest Chang
 #+DESCRIPTION: A guide to org-mode support in MarkyMark, written in org-mode
+#+TODO: TODO WAITING REVIEW BLOCKED | DONE CANCELLED
 
 * Introduction to MarkyMark
 :PROPERTIES:
@@ -62,7 +63,7 @@ Every section can be folded/unfolded just like in Emacs:
 - *Click the ▼/► indicator* next to any heading to toggle
 - *Double-click a heading* to fold/unfold
 - *Shift+Tab* anywhere to fold/unfold ALL sections
-- Fold state is *persisted* in localStorage
+- Fold state is *persisted* in localStorage - your collapsed sections stay collapsed across page loads and browser sessions!
 
 Try it now - click the fold indicator on any heading above!
 
@@ -141,14 +142,30 @@ Try clicking these links to see the navigation in action!
 
 Every heading can have a TODO state. This isn't just visual decoration - it's /structured data/ that tools can query and manipulate.
 
-*** TODO Implement custom TODO states :enhancement:
-Allow users to define their own states like =WAITING=, =REVIEW=, =BLOCKED=.
+Define custom workflows with =#+TODO:= at the document start:
+#+BEGIN_EXAMPLE
+#+TODO: TODO WAITING REVIEW BLOCKED | DONE CANCELLED
+#+END_EXAMPLE
 
-*** DONE Basic TODO/DONE support :core:
-The renderer displays TODO states as colored badges.
+States before =|= are active (colored badges), after =|= are done (green/gray).
 
-*** DONE Tag rendering :core:
-Tags appear as pills on the right side of headings.
+*** TODO New feature request :example:
+Standard TODO - red badge for items that need work.
+
+*** WAITING Client feedback :example:
+Yellow badge - blocked on external input.
+
+*** REVIEW Pull request ready :example:
+Purple badge - ready for someone to review.
+
+*** BLOCKED Dependency issue :example:
+Orange badge - can't proceed until something else is resolved.
+
+*** DONE Custom TODO states :core:
+Each state gets its own color. Active states cycle through 5 colors.
+
+*** CANCELLED Old approach :example:
+Gray badge with strikethrough - decided not to pursue.
 
 ** Properties Drawers :metadata:
 :PROPERTIES:
@@ -207,15 +224,15 @@ end
 
 Org-mode tables use a cleaner syntax than Markdown:
 
-| Feature          | Org-mode | Markdown |
-|------------------+----------+----------|
-| TODO states      | Native   | None     |
-| Tags             | Native   | None     |
-| Properties       | Native   | YAML[fn:1] |
-| Named blocks     | Native   | None     |
-| Checkboxes       | Native   | GFM only |
-| Footnotes        | Native   | Extension |
-| Stable IDs       | CUSTOM_ID | Manual   |
+| Feature      | Org-mode  | Markdown   |
+|--------------+-----------+------------|
+| TODO states  | Native    | None       |
+| Tags         | Native    | None       |
+| Properties   | Native    | YAML[fn:1] |
+| Named blocks | Native    | None       |
+| Checkboxes   | Native    | GFM only   |
+| Footnotes    | Native    | Extension  |
+| Stable IDs   | CUSTOM_ID | Manual     |
 
 The =+= characters in separators auto-align in Emacs. The rendered output is identical, but the /source/ is more structured.
 
@@ -248,14 +265,14 @@ These aren't just bullets with brackets - they're /semantic checkboxes/ that Ema
 
 Org-mode offers richer inline formatting than standard Markdown:
 
-| Syntax | Renders As | Markdown Equivalent |
-|--------+------------+---------------------|
-| =*bold*= | *bold* | =**bold**= |
-| =/italic/= | /italic/ | =*italic*= |
-| =~code~= | ~code~ | =`code`= |
-| ==verbatim== | =verbatim= | =`code`= (same) |
-| =+strike+= | +strikethrough+ | =~~strike~~= (GFM) |
-| =_underline_= | _underline_ | None (use HTML) |
+| Syntax        | Renders As      | Markdown Equivalent |
+|---------------+-----------------+---------------------|
+| =*bold*=      | *bold*          | =**bold**=          |
+| =/italic/=    | /italic/        | =*italic*=          |
+| =~code~=      | ~code~          | =`code`=            |
+| ==verbatim==  | =verbatim=      | =`code`= (same)     |
+| =+strike+=    | +strikethrough+ | =~~strike~~= (GFM)  |
+| =_underline_= | _underline_     | None (use HTML)     |
 
 Note: Org-mode distinguishes between =~code~= (for code) and ==verbatim== (for literal text). Markdown conflates these.
 
@@ -346,12 +363,13 @@ The AST includes these node types:
 :CUSTOM_ID: roadmap
 :END:
 
-** TODO Custom TODO States :enhancement:
+** DONE Custom TODO States :enhancement:
 :PROPERTIES:
 :PRIORITY: B
+:COMPLETED: 2024-12-23
 :END:
 
-Support #+TODO: and #+SEQ_TODO: for custom workflow states.
+Support #+TODO: and #+SEQ_TODO: for custom workflow states. Each state gets a distinct color!
 
 ** TODO Additional Drawer Types :enhancement:
 :PROPERTIES:
@@ -382,17 +400,17 @@ See [[file:MARKDOWN_COMPARISON.md][MARKDOWN_COMPARISON.md]] for a side-by-side c
 
 Key differences:
 
-| Capability           | Org-mode                    | Markdown               |
-|----------------------+-----------------------------+------------------------|
-| Task states          | =* TODO Heading=              | Manual (badges/emoji)  |
-| Tags                 | =* Heading :tag:=             | None                   |
-| Heading metadata     | Properties drawer           | None (YAML is global)  |
-| Stable anchors       | =CUSTOM_ID= property          | Manual =<a id="">= |
-| Named code blocks    | =#+NAME: block-name=          | None                   |
-| Checkboxes           | =- [ ] item=                  | GFM only               |
-| Footnotes            | Native with backlinks       | Extension, varies      |
-| Underline            | =_underline_=                 | None (use HTML)        |
-| Verbatim vs Code     | ==verbatim== vs =~code~=        | Both use backticks     |
+| Capability        | Org-mode                 | Markdown              |
+|-------------------+--------------------------+-----------------------|
+| Task states       | =* TODO Heading=         | Manual (badges/emoji) |
+| Tags              | =* Heading :tag:=        | None                  |
+| Heading metadata  | Properties drawer        | None (YAML is global) |
+| Stable anchors    | =CUSTOM_ID= property     | Manual =<a id="">=    |
+| Named code blocks | =#+NAME: block-name=     | None                  |
+| Checkboxes        | =- [ ] item=             | GFM only              |
+| Footnotes         | Native with backlinks    | Extension, varies     |
+| Underline         | =_underline_=            | None (use HTML)       |
+| Verbatim vs Code  | ==verbatim== vs =~code~= | Both use backticks    |
 
 * Getting Started :usage:
 :PROPERTIES:

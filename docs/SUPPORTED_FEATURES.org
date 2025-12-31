@@ -1,6 +1,7 @@
 #+TITLE: MarkyMark Org-mode Supported Features
 #+AUTHOR: Forrest Chang
 #+DESCRIPTION: Reference of supported org-mode features with status and examples
+#+TODO: TODO WAITING REVIEW | DONE CANCELLED
 
 * Overview
 :PROPERTIES:
@@ -44,6 +45,7 @@ See [[file:ORG_MODE_GUIDE.org][ORG_MODE_GUIDE.org]] for detailed examples and co
 | Heading levels 1-6 | =* Heading=, =** Heading= | Supported |
 | TODO states | =* TODO Task= | Supported |
 | DONE states | =* DONE Task= | Supported |
+| Custom TODO states | =#+TODO: STATE1 STATE2 ​| DONE1= | Supported |
 | Tags | =* Heading :tag1:tag2:= | Supported |
 | CUSTOM_ID | =:CUSTOM_ID: my-id= | Supported |
 | Properties drawer | =:PROPERTIES:= block | Supported |
@@ -53,13 +55,35 @@ See [[file:ORG_MODE_GUIDE.org][ORG_MODE_GUIDE.org]] for detailed examples and co
 ** Heading Examples
 
 *** TODO Example TODO heading :example:
-This is a TODO item with a tag.
+This is a TODO item (red badge).
+
+*** WAITING Waiting for response :example:
+This is a WAITING item (yellow badge) - waiting on external input.
+
+*** REVIEW Ready for review :example:
+This is a REVIEW item (purple badge) - code ready to review.
 
 *** DONE Example DONE heading :example:complete:
 :PROPERTIES:
 :COMPLETED: 2024-12-23
 :END:
-This is a completed item with properties.
+This is a completed item (green badge).
+
+*** CANCELLED No longer needed :example:
+This was cancelled (gray badge with strikethrough).
+
+** Custom TODO States
+
+Define your workflow with =#+TODO:= at the document start:
+
+#+BEGIN_EXAMPLE
+#+TODO: TODO WAITING REVIEW | DONE CANCELLED
+#+END_EXAMPLE
+
+- States *before* the =|= are "active" (various colors)
+- States *after* the =|= are "done" (green/gray)
+- Each active state gets a distinct color (red, yellow, purple, orange, blue)
+- Common states like WAITING, REVIEW, BLOCKED have named CSS classes
 
 * DONE Inline Formatting :core:
 :PROPERTIES:
@@ -235,12 +259,13 @@ Footnotes use the =[fn:label]= syntax[fn:example].
 :CUSTOM_ID: roadmap
 :END:
 
-** TODO Custom TODO States :enhancement:
+** DONE Custom TODO States :enhancement:
 :PROPERTIES:
 :PRIORITY: B
+:COMPLETED: 2024-12-23
 :END:
 
-Support =#+TODO:= for custom workflow states (WAITING, REVIEW, BLOCKED).
+Support =#+TODO:= for custom workflow states (WAITING, REVIEW, BLOCKED). Each state gets a distinct color badge.
 
 ** TODO Additional Drawers :enhancement:
 :PROPERTIES:

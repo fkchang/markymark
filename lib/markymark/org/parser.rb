@@ -16,6 +16,9 @@ module Markymark
       def parse
         children = []
 
+        # Parse TODO states from header lines
+        todo_states, done_states = parse_todo_keywords(@org_parser.header_lines)
+
         # Parse header lines (content before first headline)
         header_content = parse_body_lines(@org_parser.header_lines)
         children.concat(header_content)
@@ -31,11 +34,51 @@ module Markymark
         Nodes::Document.new(
           children: children,
           title: @org_parser.in_buffer_settings['TITLE'],
-          properties: @org_parser.in_buffer_settings
+          properties: @org_parser.in_buffer_settings,
+          todo_states: todo_states,
+          done_states: done_states
         )
       end
 
       private
+
+      # Parse #+TODO: and #+SEQ_TODO: directives to extract custom workflow states
+      # Returns [todo_states, done_states] arrays
+      # Format: #+TODO: STATE1 STATE2 | DONE1 DONE2
+      # States before | are active, after | are done
+      def parse_todo_keywords(header_lines)
+        todo_states = []
+        done_states = []
+
+        header_lines.each do |line|
+          line_text = line.to_s.strip
+
+          # Match #+TODO: or #+SEQ_TODO:
+          next unless line_text =~ /^#\+(TODO|SEQ_TODO):\s*(.+)/i
+
+          keywords_str = $2.strip
+
+          # Split by | to separate active and done states
+          if keywords_str.include?('|')
+            active_part, done_part = keywords_str.split('|', 2)
+            todo_states.concat(active_part.split.map(&:strip).reject(&:empty?))
+            done_states.concat(done_part.split.map(&:strip).reject(&:empty?))
+          else
+            # No | means all are active states (unusual but valid)
+            todo_states.concat(keywords_str.split.map(&:strip).reject(&:empty?))
+          end
+        end
+
+        # Return nil if no custom states found (Document will use defaults)
+        if todo_states.empty? && done_states.empty?
+          [nil, nil]
+        else
+          # Ensure we have at least defaults if only one side was specified
+          todo_states = %w[TODO] if todo_states.empty?
+          done_states = %w[DONE] if done_states.empty?
+          [todo_states, done_states]
+        end
+      end
 
       def parse_headlines(headlines)
         return [] if headlines.nil? || headlines.empty?
@@ -349,7 +392,8 @@ module Markymark
 
       def parse_table_row(line_text)
         # Split by | and extract cells
-        parts = line_text.split('|')
+        # Use -1 to preserve trailing empty strings from trailing |
+        parts = line_text.split('|', -1)
         # First and last are typically empty due to leading/trailing |
         cells = parts[1..-2] || parts
         cells.map do |cell_content|

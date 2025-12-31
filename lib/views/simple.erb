@@ -631,24 +631,70 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
-    .org-todo-todo {
+    /* Active TODO states - 5 color variants for variety */
+    .org-todo-active-0, .org-todo-todo {
       background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
       color: white;
     }
-
-    [data-theme="dark"] .org-todo-todo {
+    [data-theme="dark"] .org-todo-active-0, [data-theme="dark"] .org-todo-todo {
       background: linear-gradient(135deg, #c0392b, #a93226);
       color: #ffcccc;
     }
 
-    .org-todo-done {
+    .org-todo-active-1, .org-todo-waiting {
+      background: linear-gradient(135deg, #ffd43b, #fab005);
+      color: #333;
+    }
+    [data-theme="dark"] .org-todo-active-1, [data-theme="dark"] .org-todo-waiting {
+      background: linear-gradient(135deg, #d9930d, #b8860b);
+      color: #fff8dc;
+    }
+
+    .org-todo-active-2, .org-todo-review {
+      background: linear-gradient(135deg, #9775fa, #845ef7);
+      color: white;
+    }
+    [data-theme="dark"] .org-todo-active-2, [data-theme="dark"] .org-todo-review {
+      background: linear-gradient(135deg, #7048e8, #5f3dc4);
+      color: #e5dbff;
+    }
+
+    .org-todo-active-3, .org-todo-blocked {
+      background: linear-gradient(135deg, #ff8c42, #ff6b35);
+      color: white;
+    }
+    [data-theme="dark"] .org-todo-active-3, [data-theme="dark"] .org-todo-blocked {
+      background: linear-gradient(135deg, #e65c00, #cc5200);
+      color: #ffe4cc;
+    }
+
+    .org-todo-active-4, .org-todo-started {
+      background: linear-gradient(135deg, #4dabf7, #339af0);
+      color: white;
+    }
+    [data-theme="dark"] .org-todo-active-4, [data-theme="dark"] .org-todo-started {
+      background: linear-gradient(135deg, #1c7ed6, #1864ab);
+      color: #d0ebff;
+    }
+
+    /* Done states */
+    .org-todo-done, .org-todo-done-0 {
       background: linear-gradient(135deg, #51cf66, #40c057);
       color: white;
     }
-
-    [data-theme="dark"] .org-todo-done {
+    [data-theme="dark"] .org-todo-done, [data-theme="dark"] .org-todo-done-0 {
       background: linear-gradient(135deg, #27ae60, #219a52);
       color: #ccffcc;
+    }
+
+    .org-todo-cancelled, .org-todo-canceled {
+      background: linear-gradient(135deg, #868e96, #6c757d);
+      color: white;
+      text-decoration: line-through;
+    }
+    [data-theme="dark"] .org-todo-cancelled, [data-theme="dark"] .org-todo-canceled {
+      background: linear-gradient(135deg, #5a6268, #495057);
+      color: #dee2e6;
     }
 
     .org-tags {
@@ -1176,13 +1222,18 @@
       <img src="/assets/marky-mark-icon2.png" alt="markymark" class="app-icon">
       <span class="app-name">markymark</span>
     </div>
-    <div class="header-actions" data-current-file="<%= @current_file %>" data-current-dir="<%= @current_dir %>">
+    <div class="header-actions" data-current-file="<%= @current_file %>" data-current-dir="<%= @current_dir %>" data-is-reveal="<%= @is_reveal_presentation %>">
       <button class="action-btn" id="copy-path-btn" aria-label="Copy file path" title="Copy file path" <%= @current_file ? '' : 'disabled' %>>
         <span id="copy-icon">📋</span>
       </button>
       <button class="action-btn" id="edit-file-btn" aria-label="Edit file" title="Edit file" <%= @current_file ? '' : 'disabled' %>>
         <span id="edit-icon">✏️</span>
       </button>
+      <% if @is_reveal_presentation %>
+      <button class="action-btn" id="present-btn" aria-label="Present with org-reveal" title="Present with org-reveal&#10;&#10;Requirements:&#10;• Emacs with org-mode&#10;• ox-reveal package installed&#10;• #+REVEAL_ROOT: set in file">
+        <span id="present-icon">🎬</span>
+      </button>
+      <% end %>
       <button class="action-btn" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
         <span id="theme-icon">🌙</span>
       </button>
@@ -1389,6 +1440,53 @@
             }
           } catch (err) {
             alert('Failed to open editor: ' + err.message);
+          }
+        });
+      }
+    })();
+
+    // Present org-reveal functionality
+    (function() {
+      const presentBtn = document.getElementById('present-btn');
+      const presentIcon = document.getElementById('present-icon');
+
+      if (presentBtn) {
+        presentBtn.addEventListener('click', async function() {
+          const { dir, file } = getCurrentFileInfo();
+          if (!file) return;
+
+          // Show loading state
+          const originalIcon = presentIcon.textContent;
+          presentIcon.textContent = '⏳';
+          presentBtn.disabled = true;
+
+          try {
+            const response = await fetch('/present', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({ dir: dir, file: file })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              // Show success feedback
+              presentIcon.textContent = '✓';
+              setTimeout(() => {
+                presentIcon.textContent = originalIcon;
+                presentBtn.disabled = false;
+              }, 1500);
+            } else {
+              alert('Failed to export presentation: ' + (result.error || 'Unknown error'));
+              presentIcon.textContent = originalIcon;
+              presentBtn.disabled = false;
+            }
+          } catch (err) {
+            alert('Failed to export presentation: ' + err.message);
+            presentIcon.textContent = originalIcon;
+            presentBtn.disabled = false;
           }
         });
       }
@@ -1730,6 +1828,7 @@
         }
       }
     })();
+
   </script>
 </body>
 </html>

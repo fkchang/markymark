@@ -238,13 +238,13 @@ module Markymark
     def parse_options(args)
       parser = OptionParser.new do |opts|
         opts.banner = <<~BANNER
-          markymark - Browse markdown documentation with live reload
+          markymark - Browse markdown and org-mode documentation with live reload
 
           Usage: markymark [PATH] [OPTIONS]
                  markymark init [-y]
 
           Arguments:
-            PATH                     Directory or markdown file to browse (default: current directory)
+            PATH                     Directory or file (.md, .org) to browse (default: current directory)
                                      If a file is specified, opens that directory with the file displayed
 
           Commands:
@@ -344,8 +344,8 @@ module Markymark
 
       # If path is a file, extract directory and filename
       if File.file?(expanded_path)
-        unless expanded_path =~ /\.(md|markdown)$/i
-          raise ArgumentError, "File must be a markdown file (.md or .markdown): #{@root_path}"
+        unless expanded_path =~ /\.(md|markdown|org)$/i
+          raise ArgumentError, "File must be a markdown or org file (.md, .markdown, .org): #{@root_path}"
         end
         @initial_file = File.basename(expanded_path)
         @root_path = File.realpath(File.dirname(expanded_path))

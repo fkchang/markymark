@@ -188,12 +188,17 @@ module Markymark
           end
 
           # Only rewrite links to markdown and org files
-          if href =~ /\.(md|markdown|org)$/i
+          # Handle links with fragments (#anchor) and query params (?search=...)
+          if href =~ /\.(md|markdown|org)(?:[#?]|$)/i
+            # Split off fragment and query string
+            file_part = href.split(/[#?]/).first
+            suffix = href[file_part.length..] || ''
+
             # Resolve the relative path from the current file's directory
             if current_dir == "."
-              target_file = href
+              target_file = file_part
             else
-              target_file = File.join(current_dir, href)
+              target_file = File.join(current_dir, file_part)
             end
 
             # Normalize the path (remove ./ and resolve ../)
@@ -202,7 +207,16 @@ module Markymark
             # Rewrite to use query parameters
             encoded_file = CGI.escape(target_file)
             encoded_dir = CGI.escape(root_path)
-            %Q{<a href="/?file=#{encoded_file}&dir=#{encoded_dir}"#{rest_of_tag}>}
+
+            # Handle query string from org search links (?search=...)
+            if suffix.start_with?('?')
+              query_and_fragment = suffix.split('#', 2)
+              query = query_and_fragment[0][1..] # Remove leading ?
+              fragment = query_and_fragment[1] ? "##{query_and_fragment[1]}" : ''
+              %Q{<a href="/?file=#{encoded_file}&dir=#{encoded_dir}&#{query}"#{fragment}#{rest_of_tag}>}
+            else
+              %Q{<a href="/?file=#{encoded_file}&dir=#{encoded_dir}#{suffix}"#{rest_of_tag}>}
+            end
           else
             # Not a markdown file, leave as-is
             full_match
@@ -281,6 +295,24 @@ module Markymark
         else                         'xdg-open'
         end
       end
+
+      # Check if org file uses org-reveal (has #+REVEAL_ headers)
+      def org_reveal_file?(file_path, root_path = @root_path)
+        full_path = File.join(root_path, file_path)
+        return false unless File.exist?(full_path) && file_path.end_with?('.org')
+
+        # Read first 50 lines to check for reveal headers
+        File.open(full_path, 'r', encoding: 'UTF-8') do |f|
+          50.times do
+            line = f.gets
+            break if line.nil?
+            return true if line =~ /^#\+REVEAL_/i
+          end
+        end
+        false
+      rescue
+        false
+      end
     end
 
     # Helper methods for per-tab directory isolation via URL parameters
@@ -346,10 +378,12 @@ module Markymark
         end
 
         @html_content = self.class.render_markdown(@current_file, current_dir)
+        @is_reveal_presentation = self.class.org_reveal_file?(@current_file, current_dir)
       else
         # Default to first file if available
         @current_file = @files.first
         @html_content = @current_file ? self.class.render_markdown(@current_file, current_dir) : nil
+        @is_reveal_presentation = @current_file ? self.class.org_reveal_file?(@current_file, current_dir) : false
       end
 
       erb :simple
@@ -487,6 +521,51 @@ module Markymark
       json_or_text_error("Editor not found: #{editor}", 500)
     rescue => e
       json_or_text_error("Failed to open editor: #{e.message}", 500)
+    end
+
+    # Present org-reveal file - export to HTML and open in browser
+    post '/present' do
+      content_type :json
+
+      dir = params[:dir]&.strip
+      file = params[:file]&.strip
+
+      json_or_text_error('Directory and file are required', 400) unless dir && !dir.empty? && file && !file.empty?
+      json_or_text_error('Only .org files can be presented', 400) unless file.end_with?('.org')
+
+      expanded_dir = File.expand_path(dir)
+      full_path = validate_file_within_directory!(expanded_dir, file)
+
+      # Verify it's actually a reveal presentation
+      json_or_text_error('File does not contain org-reveal headers', 400) unless self.class.org_reveal_file?(file, expanded_dir)
+
+      # Output HTML path (same directory, .html extension)
+      html_path = full_path.sub(/\.org$/, '.html')
+
+      # Use emacsclient to connect to running Emacs (has user config + ox-reveal loaded)
+      emacs_script = <<~ELISP
+        (progn
+          (find-file "#{full_path}")
+          (org-reveal-export-to-html))
+      ELISP
+
+      # Run via emacsclient (connects to running Emacs daemon)
+      result = system('emacsclient', '-e', emacs_script, [:out, :err] => '/dev/null')
+
+      unless result && File.exist?(html_path)
+        json_or_text_error('Emacs org-reveal export failed. Ensure Emacs server is running (M-x server-start).', 500)
+      end
+
+      # Open the HTML file in default browser
+      opener = self.class.platform_default_editor
+      pid = spawn(opener, html_path, [:out, :err] => '/dev/null')
+      Process.detach(pid)
+
+      { success: true, html_path: html_path }.to_json
+    rescue Errno::ENOENT => e
+      json_or_text_error("emacsclient not found. Ensure Emacs is installed and server is running.", 500)
+    rescue => e
+      json_or_text_error("Failed to export presentation: #{e.message}", 500)
     end
 
     # Static file serving from application assets or document root (for images, etc.)

@@ -76,8 +76,40 @@ RSpec.describe Markymark::Org::Renderer do
 
         html = renderer.render(doc)
 
-        expect(html).to include('class="org-todo org-todo-todo"')
-        expect(html).to include('TODO')
+        expect(html).to include('org-todo')
+        expect(html).to include('org-todo-active')
+        expect(html).to include('org-todo-todo')
+        expect(html).to include('>TODO</span>')
+      end
+
+      it 'renders custom TODO states with correct classification' do
+        heading1 = Markymark::Org::Nodes::Heading.new(
+          level: 1,
+          text: 'Pending task',
+          todo_state: 'WAITING',
+          children: []
+        )
+        heading2 = Markymark::Org::Nodes::Heading.new(
+          level: 1,
+          text: 'Cancelled task',
+          todo_state: 'CANCELLED',
+          children: []
+        )
+        doc = Markymark::Org::Nodes::Document.new(
+          children: [heading1, heading2],
+          todo_states: %w[TODO WAITING REVIEW],
+          done_states: %w[DONE CANCELLED]
+        )
+
+        html = renderer.render(doc)
+
+        # WAITING should be active (index 1)
+        expect(html).to include('org-todo-active')
+        expect(html).to include('org-todo-waiting')
+
+        # CANCELLED should be done
+        expect(html).to include('org-todo-done')
+        expect(html).to include('org-todo-cancelled')
       end
 
       it 'renders tags' do
@@ -204,6 +236,7 @@ RSpec.describe Markymark::Org::Renderer do
 
         html = renderer.render(doc)
 
+        # Uses relative path with fragment
         expect(html).to include('href="other.org#getting-started"')
         expect(html).to include('class="org-cross-doc-link"')
       end
