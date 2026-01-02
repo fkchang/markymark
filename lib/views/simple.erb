@@ -1215,6 +1215,7 @@
       opacity: 0.6;
     }
   </style>
+  <link rel="stylesheet" href="/css/lightbox.css">
 </head>
 <body>
   <div class="app-header">
@@ -1829,6 +1830,57 @@
       }
     })();
 
+  </script>
+
+  <!-- Lightbox for image viewing -->
+  <script src="/js/lightbox.js"></script>
+  <script>
+    // Attach lightbox to image links in markdown content
+    (function() {
+      // Image file extensions to handle
+      var imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
+
+      function isImageLink(href) {
+        if (!href) return false;
+        var lower = href.toLowerCase();
+        return imageExts.some(function(ext) {
+          return lower.endsWith(ext) || lower.includes(ext + '?');
+        });
+      }
+
+      function attachLightbox() {
+        // Attach to inline images
+        document.querySelectorAll('.markdown-body img').forEach(function(img) {
+          if (img.dataset.lightboxAttached) return;
+          img.dataset.lightboxAttached = 'true';
+          img.style.cursor = 'zoom-in';
+          img.addEventListener('click', function() {
+            window.MarkyLightbox.open(img.src, img.alt);
+          });
+        });
+
+        // Attach to anchor links pointing to images
+        document.querySelectorAll('.markdown-body a').forEach(function(a) {
+          if (a.dataset.lightboxAttached) return;
+          var href = a.getAttribute('href');
+          if (isImageLink(href)) {
+            a.dataset.lightboxAttached = 'true';
+            a.style.cursor = 'zoom-in';
+            a.addEventListener('click', function(e) {
+              e.preventDefault();
+              window.MarkyLightbox.open(href, a.textContent || a.title);
+            });
+          }
+        });
+      }
+
+      // Run on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachLightbox);
+      } else {
+        attachLightbox();
+      }
+    })();
   </script>
 </body>
 </html>

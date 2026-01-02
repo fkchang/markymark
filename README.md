@@ -58,7 +58,7 @@ gem install markymark && markymark init -y
 - ✏️ **Edit in external editor** - Open current file in your preferred editor
 - 🎬 **Org-reveal presentations** - One-click export and launch for org-reveal slide decks
 - 🔗 **Bookmarkable URLs** - Share links to specific docs
-- 🖼️ **Image support** - Images in `assets/` folders render properly
+- 🖼️ **Image lightbox** - Click images to view in overlay; relative image links resolve correctly
 - 🌐 **Pumadev integration** - Optional `.test` domain support
 
 ## Org-mode Support

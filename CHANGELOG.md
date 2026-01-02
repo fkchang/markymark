@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Lightbox image viewer** - Click image links in markdown to view in overlay instead of navigating away
+  - Centered image with dark backdrop
+  - Close with Esc, click outside, or X button
+  - Works with both inline images and `[View](./image.png)` style links
+- **Relative image/file link support** - Links like `./screenshot.png` now resolve correctly relative to the markdown file's directory
+  - New `/doc/*` route serves files from document directories
+  - Both `<a href>` and `<img src>` attributes are rewritten
 - **Org-reveal presentation button** - Toolbar button (🎬) appears for `.org` files with `#+REVEAL_` headers
   - Uses `emacsclient` to export via running Emacs (requires Emacs server and ox-reveal)
   - Opens exported HTML presentation in default browser

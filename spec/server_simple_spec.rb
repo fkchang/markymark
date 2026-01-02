@@ -426,8 +426,29 @@ RSpec.describe Markymark::ServerSimple do
       expect(result).to eq(html)
     end
 
-    it 'preserves non-markdown file links unchanged' do
+    it 'rewrites non-markdown file links to use /doc/ route' do
       html = '<a href="image.png">Image</a>'
+      result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
+
+      expect(result).to include('href="/doc/image.png?dir=%2Ftest%2Froot"')
+    end
+
+    it 'rewrites relative image links from nested files' do
+      html = '<a href="./screenshot.png">Screenshot</a>'
+      result = described_class.rewrite_markdown_links(html, 'docs/guide/README.md', root_path)
+
+      expect(result).to include('href="/doc/docs%2Fguide%2Fscreenshot.png?dir=%2Ftest%2Froot"')
+    end
+
+    it 'rewrites img src attributes' do
+      html = '<img src="diagram.png" alt="Diagram">'
+      result = described_class.rewrite_markdown_links(html, 'docs/README.md', root_path)
+
+      expect(result).to include('src="/doc/docs%2Fdiagram.png?dir=%2Ftest%2Froot"')
+    end
+
+    it 'preserves absolute URLs in img tags' do
+      html = '<img src="https://example.com/image.png">'
       result = described_class.rewrite_markdown_links(html, 'README.md', root_path)
 
       expect(result).to eq(html)

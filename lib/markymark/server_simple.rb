@@ -172,7 +172,7 @@ module Markymark
         current_dir = "." if current_dir == "."
 
         # Rewrite relative links to .md or .markdown files
-        html.gsub(/<a\s+href=["']([^"']+)["']([^>]*)>/i) do
+        html = html.gsub(/<a\s+href=["']([^"']+)["']([^>]*)>/i) do
           full_match = $&
           href = $1
           rest_of_tag = $2
@@ -187,7 +187,7 @@ module Markymark
             next full_match
           end
 
-          # Only rewrite links to markdown and org files
+          # Handle links to markdown and org files
           # Handle links with fragments (#anchor) and query params (?search=...)
           if href =~ /\.(md|markdown|org)(?:[#?]|$)/i
             # Split off fragment and query string
@@ -218,9 +218,49 @@ module Markymark
               %Q{<a href="/?file=#{encoded_file}&dir=#{encoded_dir}#{suffix}"#{rest_of_tag}>}
             end
           else
-            # Not a markdown file, leave as-is
-            full_match
+            # Rewrite other relative file links to use /doc/ route
+            rewrite_relative_link(href, current_dir, root_path, rest_of_tag, :anchor)
           end
+        end
+
+        # Rewrite relative img src attributes
+        html = html.gsub(/<img\s+([^>]*?)src=["']([^"']+)["']([^>]*)>/i) do |full_match|
+          # Capture groups before any regex operations
+          before_src = Regexp.last_match(1)
+          src = Regexp.last_match(2)
+          after_src = Regexp.last_match(3)
+
+          # Skip absolute URLs
+          if src.match?(%r{^([a-z][a-z0-9+.-]*:|//)}i)
+            next full_match
+          end
+
+          rewrite_relative_link(src, current_dir, root_path, "#{before_src}|||#{after_src}", :img)
+        end
+
+        html
+      end
+
+      def rewrite_relative_link(href, current_dir, root_path, context, tag_type)
+        # Resolve the relative path from the current file's directory
+        if current_dir == "."
+          target_file = href
+        else
+          target_file = File.join(current_dir, href)
+        end
+
+        # Normalize the path (remove ./ and resolve ../)
+        target_file = Pathname.new(target_file).cleanpath.to_s
+
+        encoded_file = CGI.escape(target_file)
+        encoded_dir = CGI.escape(root_path)
+
+        if tag_type == :anchor
+          %Q{<a href="/doc/#{encoded_file}?dir=#{encoded_dir}"#{context}>}
+        else
+          # For img tags, context contains "before_src|||after_src"
+          before_src, after_src = context.split('|||', 2)
+          %Q{<img #{before_src}src="/doc/#{encoded_file}?dir=#{encoded_dir}"#{after_src}>}
         end
       end
 
@@ -594,6 +634,33 @@ module Markymark
         else
           halt 404, 'File not found'
         end
+      end
+    end
+
+    # Serve files (images, PDFs, etc.) relative to the document directory
+    # URL format: /doc/<relative-path>?dir=<document-root>
+    get '/doc/*' do
+      file_path = CGI.unescape(params[:splat].first)
+      current_dir = get_directory_from_params
+
+      full_path = File.join(current_dir, file_path)
+
+      # Security: ensure path is within document root
+      begin
+        real_path = File.realpath(full_path)
+        real_current_dir = File.realpath(current_dir)
+
+        unless self.class.within_root?(real_path, real_current_dir)
+          halt 403, 'Access denied'
+        end
+      rescue Errno::ENOENT
+        halt 404, 'File not found'
+      end
+
+      if File.exist?(full_path) && File.file?(full_path)
+        send_file full_path
+      else
+        halt 404, 'File not found'
       end
     end
   end

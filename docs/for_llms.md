@@ -43,7 +43,9 @@ markymark --set-default      # Set as default .md handler
 - `exe/markymark` - Entry point executable
 - `lib/views/simple.erb` - Main HTML template
 - `lib/public/css/style.css` - Styling
+- `lib/public/css/lightbox.css` - Image lightbox overlay
 - `lib/public/js/theme.js` - Dark/light theme toggle
+- `lib/public/js/lightbox.js` - Image lightbox module
 - `assets/Markymark.icns` - macOS app icon
 
 ### How the macOS App Works
@@ -154,6 +156,18 @@ The header toolbar includes:
 - **Edit file** - Opens the current file in an external editor
 - **Present (org-reveal)** - For `.org` files with `#+REVEAL_` headers, exports and opens presentation via `emacsclient`
 - **Theme toggle** - Switches between light and dark mode
+
+### Image Lightbox
+Clicking images or image links opens them in a modal overlay instead of navigating away:
+- **CSS**: `lib/public/css/lightbox.css` - Overlay styling, theme support
+- **JS**: `lib/public/js/lightbox.js` - IIFE module exporting `window.MarkyLightbox`
+- **Close**: Esc key, click outside, or X button
+
+### Relative Link Resolution
+Relative links in markdown (e.g., `./screenshot.png`, `../images/diagram.png`) are rewritten to resolve correctly:
+- `rewrite_markdown_links()` in `server_simple.rb` handles both `<a href>` and `<img src>`
+- `/doc/*` route serves files relative to the document directory
+- Security: Path traversal prevented via `within_root?` check
 
 ### Org-reveal Integration
 The present button (🎬) appears only for org files containing org-reveal headers (`#+REVEAL_ROOT:`, `#+REVEAL_THEME:`, etc.).
