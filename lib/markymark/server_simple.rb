@@ -150,7 +150,12 @@ module Markymark
                when '.org'
                  Markymark::Org.to_html(content)
                else
-                 Kramdown::Document.new(content, input: 'GFM', syntax_highlighter: 'rouge').to_html
+                 # Pre-process to render markdown inside <details> blocks
+                 processed_content = preprocess_details_blocks(content)
+                 Kramdown::Document.new(processed_content,
+                   input: 'GFM',
+                   syntax_highlighter: 'rouge'
+                 ).to_html
                end
 
         # Convert mermaid code blocks to divs for mermaid.js rendering
@@ -164,6 +169,24 @@ module Markymark
         html
       rescue => e
         "<p>Error rendering document: #{e.message}</p>"
+      end
+
+      # Pre-process markdown to render content inside <details> blocks
+      # Kramdown doesn't render markdown inside HTML blocks by default
+      def preprocess_details_blocks(content)
+        content.gsub(%r{(<details>.*?</summary>)(.*?)(</details>)}mi) do
+          opening = $1
+          markdown_content = $2
+          closing = $3
+
+          # Render the markdown content inside the details block
+          rendered = Kramdown::Document.new(markdown_content.strip,
+            input: 'GFM',
+            syntax_highlighter: 'rouge'
+          ).to_html
+
+          "#{opening}\n#{rendered}\n#{closing}"
+        end
       end
 
       def rewrite_markdown_links(html, current_file, root_path)

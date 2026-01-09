@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-01-08
+
 ### Added
 - **Lightbox image viewer** - Click image links in markdown to view in overlay instead of navigating away
   - Centered image with dark backdrop
