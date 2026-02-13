@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    markymark (0.1.2)
+    markymark (0.1.3)
       kramdown (~> 2.4)
       kramdown-parser-gfm (~> 1.1)
       launchy (~> 2.5)

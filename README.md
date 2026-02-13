@@ -59,6 +59,7 @@ gem install markymark && markymark init -y
 - 🎬 **Org-reveal presentations** - One-click export and launch for org-reveal slide decks
 - 🔗 **Bookmarkable URLs** - Share links to specific docs
 - 🖼️ **Image lightbox** - Click images to view in overlay; relative image links resolve correctly
+- 🔗 **`markymark://` URL scheme** - Open files from scripts, web pages, or apps that support custom URLs
 - 🌐 **Pumadev integration** - Optional `.test` domain support
 
 ## Org-mode Support
@@ -212,6 +213,38 @@ markymark renders these beautifully with:
 - Mermaid diagrams for workflows
 - Syntax-highlighted code blocks
 - Accordion navigation for nested directories
+
+## Custom URL Scheme (`markymark://`)
+
+markymark registers a `markymark://` URL scheme with macOS, so you can open files from anywhere that supports clickable URLs:
+
+```bash
+# Open a file via URL
+open "markymark:///Users/you/work/project/README.md"
+
+# Paths with spaces are percent-encoded per standard URL rules
+open "markymark:///Users/you/My%20Documents/notes.md"
+
+# Open without a path falls back to home directory
+open "markymark://"
+```
+
+### Where it works
+
+| Context | Works? | Notes |
+|---------|--------|-------|
+| **Terminal** (`open` command) | Yes | Great for scripts and automation |
+| **iTerm cmd-click** | Yes | But bare file paths already open via default handler |
+| **Web pages** (`<a href="markymark://...">`) | Yes | Browsers prompt to open the app |
+| **Discord** (plain text) | Yes | Custom scheme URLs are clickable in messages |
+| **iMessage** | Yes | macOS native, respects registered URL schemes |
+| **Telegram** | No | Only supports `http://`, `https://`, and `tg://` links |
+| **Slack** | No | Only auto-links `http://`, `https://`, and `slack://` |
+| **WhatsApp** | No | Only supports `http://` and `https://` links |
+
+### Note on iTerm
+
+If you've already run `markymark init` (which sets Markymark.app as the default `.md` handler), then **cmd-clicking file paths in iTerm already opens them in markymark** - no URL scheme needed. The URL scheme adds value for scripts, web pages, and the chat apps that support it.
 
 ## Pumadev Integration
 

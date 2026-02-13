@@ -53,7 +53,13 @@ markymark --set-default      # Set as default .md handler
 The app bundle at `~/Applications/Markymark.app` contains:
 1. **Swift launcher** (`Contents/MacOS/markymark-launcher`) - Compiled binary that receives files from Launch Services via `NSApplicationDelegate.application(_:openFile:)`
 2. **Shell helper** (`Contents/MacOS/markymark-helper`) - Called by Swift launcher, sets up Ruby environment and invokes markymark CLI
-3. **Info.plist** - Declares file type associations (`.md`, `.markdown`, `.mdown`, `.mkd`)
+3. **Info.plist** - Declares file type associations (`.md`, `.markdown`, `.mdown`, `.mkd`) and `markymark://` URL scheme
+
+The Swift launcher handles two entry points:
+- **File opening** (`application(_:openFile:)`) - From Finder double-click, `open` command, iTerm cmd-click
+- **URL scheme** (`application(_:open:)`) - From `markymark:///path/to/file.md` URLs
+
+Both extract a file path and pass it to the helper script via the same `openFile(path:)` method.
 
 This architecture is necessary because:
 - AppleScript droplets don't receive files from macOS `open` command
@@ -94,6 +100,12 @@ xattr -cr ~/Applications/Markymark.app  # Clear quarantine
 # Clear log and test
 : > ~/.markymark/launcher.log
 open -a ~/Applications/Markymark.app /path/to/file.md
+cat ~/.markymark/launcher.log
+```
+
+### Testing the URL Scheme
+```bash
+open "markymark:///path/to/file.md"
 cat ~/.markymark/launcher.log
 ```
 

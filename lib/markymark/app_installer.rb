@@ -253,6 +253,17 @@ module Markymark
                 </array>
               </dict>
             </array>
+            <key>CFBundleURLTypes</key>
+            <array>
+              <dict>
+                <key>CFBundleURLName</key>
+                <string>com.markymark.url</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                  <string>markymark</string>
+                </array>
+              </dict>
+            </array>
             <key>UTImportedTypeDeclarations</key>
             <array>
               <dict>
@@ -360,6 +371,18 @@ module Markymark
                   hasOpenedFile = true
                   openFile(path: filename)
                   return true
+              }
+
+              func application(_ application: NSApplication, open urls: [URL]) {
+                  for url in urls {
+                      if url.scheme == "markymark" {
+                          hasOpenedFile = true
+                          let filePath = url.path
+                          if !filePath.isEmpty {
+                              openFile(path: filePath)
+                          }
+                      }
+                  }
               }
 
               func openFile(path: String) {
